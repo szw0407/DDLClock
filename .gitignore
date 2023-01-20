@@ -1,0 +1,7 @@
+# 暂且粗略认为这几个文件不提交。
+# 可能有些东西还是要提交的，到时候再改
+/.idea
+/venv
+profiles.json
+settings.json
+/__pycache__
