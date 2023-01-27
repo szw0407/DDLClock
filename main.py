@@ -1,15 +1,16 @@
 import os
 from fastapi import FastAPI
-import pyperclip
+
 import uvicorn
 import webbrowser
 import uuid
 import requests
 import json
 
-from typing import Union
+from typing import Union,Dict
 
 from pydantic import BaseModel
+
 
 import values
 
@@ -19,6 +20,14 @@ app = FastAPI()
 # ScopeList=
 
 tenant="common"
+
+class cqhttp_post(BaseModel):
+    time:int
+    self_id:int
+    post_type:str
+    message_type:str
+    sub_type:str
+
 
 def ReadProfile(): 
     with open('profiles.json','r') as prof_file:
@@ -56,6 +65,14 @@ async def read_item(state:str,error:Union[str,None]=None,error_description:Union
     
     
     return tmp
+
+@app.post("/QQ")
+async def read_item(data:Dict):
+    f=open("QQlog.json","a")
+    if data["post_type"]!="meta_event":
+        f.write(json.dumps(data,ensure_ascii=False)+",\n")
+    f.close
+    return {"Sta":"OK"}
 
 if __name__ == "__main__":
     ReadProfile()
