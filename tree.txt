@@ -1,0 +1,55 @@
+.
+├── GetPlatformInfo.py
+├── QQlog.json
+├── __pycache__
+├── config.json
+├── go-cqhttp
+│   ├── config.yml
+│   ├── data
+│   │   ├── cache
+│   │   ├── images
+│   │   │   ├── 000033.ldb
+│   │   │   ├── 000034.ldb
+│   │   │   ├── 000047.ldb
+│   │   │   ├── 000052.log
+│   │   │   ├── CURRENT
+│   │   │   ├── CURRENT.bak
+│   │   │   ├── LOCK
+│   │   │   ├── LOG
+│   │   │   ├── MANIFEST-000053
+│   │   │   └── guild-images
+│   │   ├── leveldb-v3
+│   │   │   ├── 000038.ldb
+│   │   │   ├── 000043.ldb
+│   │   │   ├── 000050.ldb
+│   │   │   ├── 000055.ldb
+│   │   │   ├── 000056.log
+│   │   │   ├── CURRENT
+│   │   │   ├── CURRENT.bak
+│   │   │   ├── LOCK
+│   │   │   ├── LOG
+│   │   │   └── MANIFEST-000057
+│   │   ├── videos
+│   │   │   ├── 000048.log
+│   │   │   ├── CURRENT
+│   │   │   ├── CURRENT.bak
+│   │   │   ├── LOCK
+│   │   │   ├── LOG
+│   │   │   └── MANIFEST-000049
+│   │   └── voices
+│   ├── device.json
+│   ├── go-cqhttp.bat
+│   ├── go-cqhttp.exe
+│   ├── logs
+│   │   ├── 2023-01-25.log
+│   │   └── 2023-01-27.log
+│   └── session.token
+├── tree.txt
+├── log.json
+├── main.py
+├── readme.md
+├── token.temp
+├── values.py
+└── venv
+
+263 directories, 1818 files

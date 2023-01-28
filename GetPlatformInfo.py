@@ -9,10 +9,7 @@
 
 import platform 
 os = platform.system()
-print (os)
-print (platform.platform())
-print (platform.version())
-print (platform.architecture())
+
 
 '''
     python中，platform模块给我们提供了很多方法去获取操作系统的信息
@@ -39,7 +36,7 @@ print (platform.architecture())
 
 #global var
 #是否显示日志信息
-SHOW_LOG = True
+# SHOW_LOG = True
 
 def get_platform():
     '''获取操作系统名称及版本号'''
@@ -113,16 +110,18 @@ def show_os_all_info():
     print('获取操作系统类型 : [{}]'.format(get_system()))
     print('汇总信息 : [{}]'.format(get_uname()))
 
-def show_os_info():
-    '''只打印os的信息，没有解释部分'''
-    print(get_platform())
-    print(get_version())
-    print(get_architecture())
-    print(get_machine())
-    print(get_node())
-    print(get_processor())
-    print(get_system())
-    print(get_uname())
+def show_os_info(ShowAllInTerminal:bool = False):
+    if ShowAllInTerminal:
+        show_os_all_info()
+    p=(get_platform())
+    v=(get_version())
+    a=(get_architecture())
+    m=(get_machine())
+    n=(get_node())
+    c=(get_processor())
+    y=(get_system())
+    e=(get_uname())
+    return {"platform":p,"version":v,"architecture":a,"machine":m,"node":n,"processor":c,"system":y,"Uname":e}
 
 def show_python_all_info():
     '''打印python的全部信息'''
@@ -160,6 +159,10 @@ def test():
 def init():
     global SHOW_LOG
     SHOW_LOG = True
+    print (os)
+    print (platform.platform())
+    print (platform.version())
+    print (platform.architecture())
     
 def main():
     init()
