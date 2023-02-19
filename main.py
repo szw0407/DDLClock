@@ -1,65 +1,64 @@
 from fastapi import FastAPI
-
 import os
 import uvicorn
-import webbrowser
-import uuid
 import requests
 import json
-
-from typing import Union, Dict, List
-
-from pydantic import BaseModel
-
-import values
+import time
+from typing import Union
 from GetPlatformInfo import show_os_info
+from MsAPIPost import *
+from StartUp import *
+# import values
 
 app = FastAPI()
 
 tenant = "common"
 # used for Microsoft Account login
 
-class GlobalDateTime(BaseModel):
-    dateTime:str # YYYY-MM-DDT00:00:00
-    timeZone:str = 'China Standard Time'
+def get_token(filename):
+    def read_token(fn):
+        tok_file=open(fn,"r")
+        tokf=json.load(tok_file)
+        tok_file.close()
+        return tokf
+    tokf=read_token(filename)    
+    if tokf["load_time"]+tokf["expires_in"]<time.time():
+        url=f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+        dataobj=read_config("config.json",refreshToken=tokf["refresh_token"],grantType="refresh_token")
+        save_token(filename="token.temp",content=get_token_from_code(url,dataobj))
+        tokf=read_token(filename)
+    return tokf["access_token"]
 
-class DefaultMsEvent(BaseModel):
-    class EventBody(BaseModel):
-        contentType: str = 'HTML'
-        content:str = '' # str in raw or html. e.g."<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><meta name=\"Generator\" content=\"Microsoft Exchange Server\"><!-- converted from rtf --><style><!-- .EmailQuote { margin-left: 1pt; padding-left: 4pt; border-left: #800000 2px solid; } --></style></head><body><font face=\"Times New Roman\" size=\"3\"><span style=\"font-size:12pt;\"><a name=\"BM_BEGIN\"></a></span></font></body></html>"
-    class loc(BaseModel):
-        displayName:str
-    class attendee(BaseModel):
-        class emad(BaseModel):
-            address:str
-            name:str
-        emailAddress:emad
-        type:str = 'required'
-    subject:str
-    body:Union[EventBody,None] = None
-    start:GlobalDateTime
-    end:GlobalDateTime
-    location:Union[None,loc] = None
-    isReminderOn:Union[bool,None] = None # True default in Ms
-    reminderMinutesBeforeStart:Union[int,None] = None # 15 minutes default in Ms; Minutes Ahead.
-    attendees:Union[List[attendee],None] = None
-    allowNewTimeProposals:Union[bool,None] = None
-    transactionId:Union[None,str] = None # Maybe a UUID again, but not sure.
-
-def ReadProfile():
-    with open('config.json', 'r') as cfg_file:
-        prof = json.load(cfg_file)
-        cfg_file.close() # CLOSE THE FILE WHEN YOU DON'T NEED TO READ OR EDIT IT!
+def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
+    cfg_file=open(filename, 'r')
+    prof = json.load(cfg_file)
+    cfg_file.close()
+    ClientID = prof["client_ID"]
+    RedirectURL = prof["redirect_URL"]
+    ScopeList = prof["scope"].replace("%20"," ")
+    dataobj={"client_id":ClientID,"scope":ScopeList,"grant_type":grantType}
+    if grantType=="refresh_token":
+        dataobj.update({"refresh_token":refreshToken})
+    elif grantType=="authorization_code":
+        dataobj.update({"code":authoriationCode,"redirect_uri":RedirectURL})
+    return dataobj
+def save_token(filename,content):
+    f=open(filename,"w")
+    content.update({"load_time":time.time()})
+    f.write(json.dumps(content,ensure_ascii=False))
+    f.close()
+def init(debug=False):
+    if not(debug):
+        port=start_gocqhttp(show_os_info(ShowAllInTerminal=False))
+    else:
+        port=12000
+    if debug:
+        print(get_token("token.temp"))
+    else:
         try:
-            prof["client_ID"]
-            prof["redirect_URL"]
-            prof["scope"]
-            # to check whether the file include the essentials
+            print(get_token("token.temp"))
         except:
-            print("Err:File config.json Error")
-            prof=None
-    return prof
-
+            login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
 
 @app.get("/{login}")
 async def read_item(state: str, error: Union[str, None] = None, error_description: Union[str, None] = None, code: Union[str, None] = None):
@@ -73,40 +72,22 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
         tmp={"error":"cannot load UUID"}
         UUID=""
     try:
-        cfg_file=open('config.json', 'r')
-        prof = json.load(cfg_file)
-        cfg_file.close()
-        ClientID = prof["client_ID"]
-        RedirectURL = prof["redirect_URL"]
-        ScopeList = prof["scope"].replace("%20"," ")
-        dataobj={"client_id":ClientID,"scope":ScopeList,"code":code,"redirect_uri":RedirectURL,"grant_type":"authorization_code"}
+        dataobj=read_config(authoriationCode=code,filename='config.json',grantType="authorization_code")
         # to prepare GetToken POST object
     except:
         tmp={"error":"cannot load Profile"}
         dataobj=None
 
-    if state == UUID and dataobj is not None:
-        if error is not None:
-            tmp.update({"error": error, "error_description": error_description})
-        elif code is not None:
-            tmp.update({"code": code})
-            try:
-                GetToken = requests.post(f"https://login.microsoftonline.com//{tenant}//oauth2//v2.0//token",data=dataobj, headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36'})
-            except:
-                ret={"error":"unable to get token"}
-            if str(GetToken)=="<Response [200]>":
-                try:
-                    ret=json.loads(GetToken.text)
-                except json.JSONDecodeError:
-                    ret = {"error":"200 with json decode error"}
-            elif str(GetToken)=="<Response [400]>":
-                ret={"error":"400 Unable to get token"}
-            elif ret=={"error":"unable to get token"}:
-                ret=ret
+    if state == UUID:
+        if dataobj is not None:
+            if error is not None:
+                tmp.update({"error": error, "error_description": error_description})
+            elif code is not None:
+                tmp.update({"code": code})
+                url=f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+                tmp=get_token_from_code(url,dataobj)
             else:
-                ret={"error":"Unknown Error"}
-
-            tmp.update(ret)
+                tmp.update({"error":"No error but no code returned"})
     else:
         try:
             tmp["error"]
@@ -116,9 +97,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
         tmp["error"] # If it has any errors above, do not write down!
     except:
         try:
-            f=open("token.temp","w")
-            f.write(json.dumps(tmp,ensure_ascii=False))
-            f.close()
+            save_token(filename="token.temp",content=tmp)
             if os.name=='nt':
                 os.system("del -f -q .UUID.temp")
             elif os.name=='posix':
@@ -134,11 +113,10 @@ async def create_event(data:DefaultMsEvent):
     with open("settings.json", "r") as set_file:
         setf=json.load(set_file)
         set_file.close()
-    email=setf["email"]
-    with open("token.temp","r") as tok_file:
-        tokf=json.load(tok_file)
-        tok_file.close()
-    token=tokf["access_token"]
+    try:       
+        token=get_token("token.temp")
+    except:
+        token=None
     NoneK=[]
     for key in data.keys():
         if data[key]==None:
@@ -146,9 +124,8 @@ async def create_event(data:DefaultMsEvent):
     for key in NoneK:
         del data[key]
     POST = requests.post(f"https://graph.microsoft.com/v1.0/me/events",data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
-    # return {"st":str(POST)}
     ret=data
-    ret.update({"User":email,"token":token,"POST RET":str(POST)})
+    ret.update({"token":token,"POST RET":str(POST)})
     ret.update(json.loads(POST.text))
     return ret
 
@@ -166,46 +143,7 @@ async def read_item(data: Dict):
             else:
                 k = 0
     return {"Sta": "OK"} # Return anything you want in fact.
-
-
+   
 if __name__ == "__main__":
-    prof=ReadProfile() #init
-    sys=show_os_info(ShowAllInTerminal=True)
-    print("Try to run go-cqhttp.")
-    # Can only start CQ-HTTP for Windows.
-    s=sys["system"]
-    if s=='Windows':
-        os.system("cd go-cqhttp && go-cqhttp.bat")
-    elif s=='Linux':
-        print("[Warn] Linux auto start is not supported now.")
-        m=sys["machine"]
-        if m=='AMD64' or m=='x86_64':
-            print("[INFO] Linux AMD64 release deb file prepared in /go-cqhttp/LinuxRelease folder.")
-            print("[INFO] To get other versions or update it, please go to https://github.com/Mrs4s/go-cqhttp/releases")
-        else:
-            print(f"[INFO] Linux release for {m} is available on GitHub Release.")
-            a=input("Go to download it now?(y/n)")
-            if a=="y" or a=="Y":
-                webbrowser.open("https://github.com/Mrs4s/go-cqhttp/releases")
-            else:
-                print("Canceled.")
-    else:
-        print(f"[Warn]You are running {s}. You might need to build the file on your own to run it.")
-        a=input("[Info]You may go to GitHub releases to see whether a release for {s} is available or download the source code and build it using Golang. Download now?(y/n)")
-        if a=="y" or a=="Y":
-            webbrowser.open("https://github.com/Mrs4s/go-cqhttp/releases")
-            webbrowser.open("https://docs.go-cqhttp.org/guide/quick_start.html#%E5%A6%82%E4%BD%95%E8%87%AA%E5%B7%B1%E6%9E%84%E5%BB%BA")
-        else:
-            print("Canceled.")
-    UUID = str(uuid.uuid4())
-    temp = open(".UUID.temp", "w")
-    temp.write(UUID)
-    temp.close()
-    #save the random UUID
-    ClientID = prof["client_ID"]
-    RedirectURL = prof["redirect_URL"]
-    ScopeList = prof["scope"]
-    LoginURL = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize?client_id={ClientID}&response_type=code&redirect_uri={RedirectURL}&response_mode=query&scope={ScopeList}&state={UUID}"
-    webbrowser.open(LoginURL)
-    # open the website and login
+    init(debug=True)
     uvicorn.run("main:app", reload=True)
