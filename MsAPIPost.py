@@ -49,9 +49,20 @@ class DefaultMsEvent(BaseModel):
     reminderMinutesBeforeStart:Union[int,None] = None # 15 minutes default in Ms; Minutes Ahead.
     attendees:Union[List[attendee],None] = None
     allowNewTimeProposals:Union[bool,None] = None
-    isFullDay:bool = False
+    isAllDay:bool = False
     transactionId:Union[None,str] = None # Maybe a UUID again, but not sure.
 
 class DefaultMsToDo(BaseModel):
+    class bodyDict(BaseModel):
+        content:str=""
+        contentType:str="text"
     title:str
-    catagories:list
+    importance:str # low normal high
+    isReminderOn:bool=True 
+    status:str # notStarted, inProgress, completed, waitingOnOthers, deferred
+    categories:list = [] # "红色类别",etc.
+    body:bodyDict
+    dueDateTime:GlobalDateTime
+    startDateTime:GlobalDateTime
+    reminderDataTime:GlobalDateTime
+

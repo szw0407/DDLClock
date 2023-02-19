@@ -100,7 +100,6 @@ async def create_event(data:DefaultMsEvent):
     for key in NoneK:
         del data[key]
     POST = requests.post(f"https://graph.microsoft.com/v1.0/me/events",data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
-    # return {"st":str(POST)}
     ret=data
     ret.update({"token":token,"POST RET":str(POST)})
     ret.update(json.loads(POST.text))
