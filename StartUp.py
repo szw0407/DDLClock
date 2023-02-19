@@ -88,5 +88,3 @@ def login(prof,UUID,debug=False):
             webbrowser.open(LoginURL)
     else:
         print("Error:Profile error")
-if __name__=="__main__":
-    print(start_gocqhttp())

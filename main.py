@@ -1,16 +1,14 @@
 from fastapi import FastAPI
-
 import os
 import uvicorn
-
 import requests
 import json
-
+import time
 from typing import Union
+from GetPlatformInfo import show_os_info
 from MsAPIPost import *
 from StartUp import *
 # import values
-from GetPlatformInfo import show_os_info
 
 app = FastAPI()
 
@@ -18,17 +16,49 @@ tenant = "common"
 # used for Microsoft Account login
 
 def get_token(filename):
-    tok_file=open(filename,"r")
-    tokf=json.load(tok_file)
-    tok_file.close()
+    def read_token(fn):
+        tok_file=open(fn,"r")
+        tokf=json.load(tok_file)
+        tok_file.close()
+        return tokf
+    tokf=read_token(filename)    
+    if tokf["load_time"]+tokf["expires_in"]<time.time():
+        url=f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+        dataobj=read_config("config.json",refreshToken=tokf["refresh_token"],grantType="refresh_token")
+        save_token(filename="token.temp",content=get_token_from_code(url,dataobj))
+        tokf=read_token(filename)
     return tokf["access_token"]
 
+def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
+    cfg_file=open(filename, 'r')
+    prof = json.load(cfg_file)
+    cfg_file.close()
+    ClientID = prof["client_ID"]
+    RedirectURL = prof["redirect_URL"]
+    ScopeList = prof["scope"].replace("%20"," ")
+    dataobj={"client_id":ClientID,"scope":ScopeList,"grant_type":grantType}
+    if grantType=="refresh_token":
+        dataobj.update({"refresh_token":refreshToken})
+    elif grantType=="authorization_code":
+        dataobj.update({"code":authoriationCode,"redirect_uri":RedirectURL})
+    return dataobj
+def save_token(filename,content):
+    f=open(filename,"w")
+    content.update({"load_time":time.time()})
+    f.write(json.dumps(content,ensure_ascii=False))
+    f.close()
 def init(debug=False):
-    port=start_gocqhttp(show_os_info(ShowAllInTerminal=False))
-    try:
-        get_token("token.temp")
-    except:
-        login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
+    if not(debug):
+        port=start_gocqhttp(show_os_info(ShowAllInTerminal=False))
+    else:
+        port=12000
+    if debug:
+        print(get_token("token.temp"))
+    else:
+        try:
+            print(get_token("token.temp"))
+        except:
+            login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
 
 @app.get("/{login}")
 async def read_item(state: str, error: Union[str, None] = None, error_description: Union[str, None] = None, code: Union[str, None] = None):
@@ -42,26 +72,22 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
         tmp={"error":"cannot load UUID"}
         UUID=""
     try:
-        cfg_file=open('config.json', 'r')
-        prof = json.load(cfg_file)
-        cfg_file.close()
-        ClientID = prof["client_ID"]
-        RedirectURL = prof["redirect_URL"]
-        ScopeList = prof["scope"].replace("%20"," ")
-        dataobj={"client_id":ClientID,"scope":ScopeList,"code":code,"redirect_uri":RedirectURL,"grant_type":"authorization_code"}
+        dataobj=read_config(authoriationCode=code,filename='config.json',grantType="authorization_code")
         # to prepare GetToken POST object
     except:
         tmp={"error":"cannot load Profile"}
         dataobj=None
 
-    if state == UUID and dataobj is not None:
-        if error is not None:
-            tmp.update({"error": error, "error_description": error_description})
-        elif code is not None:
-            tmp.update({"code": code})
-            url=f"https://login.microsoftonline.com//{tenant}//oauth2//v2.0//token"
-            
-            tmp.update(get_token_from_code(url,dataobj))
+    if state == UUID:
+        if dataobj is not None:
+            if error is not None:
+                tmp.update({"error": error, "error_description": error_description})
+            elif code is not None:
+                tmp.update({"code": code})
+                url=f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+                tmp=get_token_from_code(url,dataobj)
+            else:
+                tmp.update({"error":"No error but no code returned"})
     else:
         try:
             tmp["error"]
@@ -71,9 +97,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
         tmp["error"] # If it has any errors above, do not write down!
     except:
         try:
-            f=open("token.temp","w")
-            f.write(json.dumps(tmp,ensure_ascii=False))
-            f.close()
+            save_token(filename="token.temp",content=tmp)
             if os.name=='nt':
                 os.system("del -f -q .UUID.temp")
             elif os.name=='posix':
@@ -121,6 +145,5 @@ async def read_item(data: Dict):
     return {"Sta": "OK"} # Return anything you want in fact.
    
 if __name__ == "__main__":
-    init(debug=False)
-    # open the website and login
+    init(debug=True)
     uvicorn.run("main:app", reload=True)
