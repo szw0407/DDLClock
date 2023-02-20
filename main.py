@@ -42,11 +42,13 @@ def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
     elif grantType=="authorization_code":
         dataobj.update({"code":authoriationCode,"redirect_uri":RedirectURL})
     return dataobj
+
 def save_token(filename,content):
     f=open(filename,"w")
     content.update({"load_time":time.time()})
     f.write(json.dumps(content,ensure_ascii=False))
     f.close()
+
 def init(debug=False):
     if not(debug):
         port=start_gocqhttp(show_os_info(ShowAllInTerminal=False))
@@ -123,7 +125,7 @@ async def create_event(data:DefaultMsEvent):
             NoneK.append(key)
     for key in NoneK:
         del data[key]
-    POST = requests.post(f"https://graph.microsoft.com/v1.0/me/events",data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
+    POST = requests.post("https://graph.microsoft.com/v1.0/me/events",data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
     ret=data
     ret.update({"token":token,"POST RET":str(POST)})
     ret.update(json.loads(POST.text))
@@ -143,7 +145,11 @@ async def read_item(data: Dict):
             else:
                 k = 0
     return {"Sta": "OK"} # Return anything you want in fact.
-   
+
+'''
+
+'''
+
 if __name__ == "__main__":
-    init(debug=True)
+    init(debug=False)
     uvicorn.run("main:app", reload=True)
