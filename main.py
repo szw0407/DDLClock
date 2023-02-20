@@ -14,7 +14,18 @@ app = FastAPI()
 
 tenant = "common"
 # used for Microsoft Account login
-
+def use_api(url,data,token):
+    NoneK=[]
+    for key in data.keys():
+        if data[key]==None:
+            NoneK.append(key)
+    for key in NoneK:
+        del data[key]
+    POST = requests.post(url,data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
+    ret=data
+    ret.update({"token":token,"POST RET":str(POST)})
+    ret.update(json.loads(POST.text))
+    return ret
 def get_token(filename):
     def read_token(fn):
         tok_file=open(fn,"r")
@@ -111,7 +122,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
 
 @app.post("/MsCalendar")
 async def create_event(data:DefaultMsEvent):
-    data=data.dict()
+    
     with open("settings.json", "r") as set_file:
         setf=json.load(set_file)
         set_file.close()
@@ -119,16 +130,9 @@ async def create_event(data:DefaultMsEvent):
         token=get_token("token.temp")
     except:
         token=None
-    NoneK=[]
-    for key in data.keys():
-        if data[key]==None:
-            NoneK.append(key)
-    for key in NoneK:
-        del data[key]
-    POST = requests.post("https://graph.microsoft.com/v1.0/me/events",data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
-    ret=data
-    ret.update({"token":token,"POST RET":str(POST)})
-    ret.update(json.loads(POST.text))
+
+    ret=use_api(url="https://graph.microsoft.com/v1.0/me/events",data=data.dict(),token=token)
+    
     return ret
 
 @app.post("/QQ")

@@ -54,7 +54,7 @@ def start_gocqhttp(sys):
         port =[]
         c=file.read()
         data=yaml.load(c,Loader=yaml.FullLoader)
-        servers=data.get('servers')
+        servers=data['servers']
         
         for i in servers:
             http=i.get("http")
