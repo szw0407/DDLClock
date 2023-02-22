@@ -5,14 +5,24 @@ import requests
 import json
 import time
 from typing import Union
-from GetPlatformInfo import show_os_info
+
 from MsAPIPost import *
 from StartUp import *
 # import values
 
 app = FastAPI()
-
+def read_settings(filename):    
+    with open(filename, "r") as set_file:
+        setf=json.load(set_file)
+        set_file.close()
+        return setf
 tenant = "common"
+
+def get_login_info(port):
+    userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")
+
+    return userinfo.text
+
 # used for Microsoft Account login
 def use_api(url,data,token):
     NoneK=[]
@@ -26,6 +36,7 @@ def use_api(url,data,token):
     ret.update({"token":token,"POST RET":str(POST)})
     ret.update(json.loads(POST.text))
     return ret
+
 def get_token(filename):
     def read_token(fn):
         tok_file=open(fn,"r")
@@ -62,16 +73,16 @@ def save_token(filename,content):
 
 def init(debug=False):
     if not(debug):
-        port=start_gocqhttp(show_os_info(ShowAllInTerminal=False))
-    else:
-        port=12000
-    if debug:
-        print(get_token("token.temp"))
-    else:
+        start_gocqhttp()
         try:
             print(get_token("token.temp"))
         except:
             login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
+
+    else:
+        print(get_token("token.temp"))
+    
+            
 
 @app.get("/{login}")
 async def read_item(state: str, error: Union[str, None] = None, error_description: Union[str, None] = None, code: Union[str, None] = None):
@@ -122,10 +133,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
 
 @app.post("/MsCalendar")
 async def create_event(data:DefaultMsEvent):
-    
-    with open("settings.json", "r") as set_file:
-        setf=json.load(set_file)
-        set_file.close()
+
     try:       
         token=get_token("token.temp")
     except:
@@ -133,12 +141,12 @@ async def create_event(data:DefaultMsEvent):
 
     ret=use_api(url="https://graph.microsoft.com/v1.0/me/events",data=data.dict(),token=token)
     
-    return ret
+    return ret # login-success.html
 
 @app.post("/QQ")
 async def read_item(data: Dict):
     k = 1
-    if data["post_type"] != "meta_event":
+    if data["post_type"] != "meta_event" or True:
         while k == 1:
             try:
                 f = open("QQlog.json", "a")
@@ -150,10 +158,17 @@ async def read_item(data: Dict):
                 k = 0
     return {"Sta": "OK"} # Return anything you want in fact.
 
-'''
-
-'''
+@app.get("/DDLs")
+async def get_DDLs():
+    settings=read_settings("settings.json")
+    with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
+        ret={"userInformation":get_login_info(port=get_cqhttp_httpserver_port(f))}
+        f.close()
+    DDLlist=[]
+    # get DDLs from SQL
+    ret.update({"DDL":DDLlist})
+    return ret
 
 if __name__ == "__main__":
-    init(debug=False)
+    init(debug=True)
     uvicorn.run("main:app", reload=True)

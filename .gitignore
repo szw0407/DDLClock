@@ -5,7 +5,7 @@
 config.json
 settings.json
 /__pycache__
-*log*
+*log.*
 /go-cqhttp/data/*
 /go-cqhttp/logs/*
 /go-cqhttp/config.yml
