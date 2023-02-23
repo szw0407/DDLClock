@@ -11,6 +11,7 @@ from StartUp import *
 # import values
 
 app = FastAPI()
+
 def read_settings(filename):    
     with open(filename, "r") as set_file:
         setf=json.load(set_file)
@@ -20,7 +21,6 @@ tenant = "common"
 
 def get_login_info(port):
     userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")
-
     return userinfo.text
 
 # used for Microsoft Account login
