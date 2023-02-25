@@ -17,11 +17,13 @@ def read_settings(filename):
         setf=json.load(set_file)
         set_file.close()
         return setf
+# 一个参数
 tenant = "common"
 
 def get_login_info(port):
     userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")
     return userinfo.text
+# 获得登录的QQ号
 
 # used for Microsoft Account login
 def use_api(url,data,token):
@@ -51,7 +53,7 @@ def get_token(filename):
         tokf=read_token(filename)
     return tokf["access_token"]
 
-def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
+def read_config(filename,grantType,authoriationCode=None,refreshToken=None): # 获得msapi的信息
     cfg_file=open(filename, 'r')
     prof = json.load(cfg_file)
     cfg_file.close()
@@ -65,13 +67,13 @@ def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
         dataobj.update({"code":authoriationCode,"redirect_uri":RedirectURL})
     return dataobj
 
-def save_token(filename,content):
+def save_token(filename,content): # 保存登录令牌
     f=open(filename,"w")
     content.update({"load_time":time.time()})
     f.write(json.dumps(content,ensure_ascii=False))
     f.close()
 
-def init(debug=False):
+def init(debug=False): # 初始化
     if not(debug):
         start_gocqhttp()
         try:
@@ -125,7 +127,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
             if os.name=='nt':
                 os.system("del -f -q .UUID.temp")
             elif os.name=='posix':
-                os.name("rm -f .UUID.temp")
+                os.system("rm -f ./.UUID.temp")
         except:
             tmp.update({"error":"token UNABLE to save. Please copy the information here."})
             # The browser shows the information too.
@@ -133,7 +135,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
 
 @app.post("/MsCalendar")
 async def create_event(data:DefaultMsEvent):
-
+    # 一个用来测试的端口，对接微软API
     try:       
         token=get_token("token.temp")
     except:
@@ -145,17 +147,18 @@ async def create_event(data:DefaultMsEvent):
 
 @app.post("/QQ")
 async def read_item(data: Dict):
-    k = 1
-    if data["post_type"] != "meta_event" or True:
-        while k == 1:
+    k = True
+    if data["post_type"] != "meta_event" or True: # 判断不是测试连通性的post
+        while k:
             try:
                 f = open("QQlog.json", "a")
-                f.write(json.dumps(data, ensure_ascii=False) + ",\n")
+                f.write(json.dumps(data, ensure_ascii=False) + ",\n") # 记录日志。
+                # 此处是解析信息，从data取相关的内容
                 f.close()
             except:
-                k = 1
+                k = True # 失败，要重试；次数无限不合适，但是先不管
             else:
-                k = 0
+                k = False # 成功
     return {"Sta": "OK"} # Return anything you want in fact.
 
 @app.get("/DDLs")
@@ -165,10 +168,10 @@ async def get_DDLs():
         ret={"userInformation":get_login_info(port=get_cqhttp_httpserver_port(f))}
         f.close()
     DDLlist=[]
-    # get DDLs from SQL
+    # get DDLs from SQL 此处是下一个要做的事情
     ret.update({"DDL":DDLlist})
     return ret
 
 if __name__ == "__main__":
-    init(debug=True)
+    init(debug=False)
     uvicorn.run("main:app", reload=True)
