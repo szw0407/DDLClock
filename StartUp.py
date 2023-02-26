@@ -17,7 +17,7 @@ def ReadProfile(f):
         except:
             print("Err:File config.json Error")
             prof=None
-    return prof
+    return prof # return a dictionary
 
 def start_gocqhttp(sys):
     print("Try to run go-cqhttp.")
@@ -69,13 +69,30 @@ def start_gocqhttp(sys):
         print("Error:YAML of Go-cqhttp Error")
     print(port)
     return port
+
 def make_UUID(temp):
+    """
+    It creates a UUID and writes it to a file
+    
+    :param temp: a temporary file object
+    :return: A UUID is being returned.
+    """
     UUID = str(uuid.uuid4())    
     temp.write(UUID)
     temp.close()
     return UUID
 
 def login(prof,UUID,debug=False):
+    """
+    This function takes a profile and a UUID and opens a browser window to the login page for the
+    profile
+    
+    :param prof: This is the profile you want to use
+    :param UUID: A unique identifier for the login session. This is used to prevent cross-site request
+    forgery attacks
+    :param debug: If set to True, the login URL will be printed to the console. If set to False, the
+    login URL will be opened in the default browser, defaults to False (optional)
+    """
     if prof!=None:
         ClientID = prof["client_ID"]
         RedirectURL = prof["redirect_URL"]
