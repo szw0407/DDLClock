@@ -6,8 +6,18 @@ from typing import Union
 import requests
 import json
 
+
 def get_token_from_code(url,dataobj):
+    """
+    It takes a url and a data object and returns a json object with the token or an error message
+
+    :param url: The URL to the token endpoint
+    :param dataobj: This is the data object that is sent to the server. It contains the client_id,
+    client_secret, code, and redirect_uri
+    :return: A dictionary with the key "access_token" and the value of the access token.
+    """
     try:
+        # Sending a post request to the url with the dataobj and a header.
         GetToken = requests.post(url,data=dataobj, headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36'})
     except:
         ret={"error":"unable to get token"}
