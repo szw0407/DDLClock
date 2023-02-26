@@ -26,7 +26,12 @@ def get_cqhttp_httpserver_port(file):
     servers=data['servers']
     
     for i in servers:
-        http=i.get("http")
+        try:
+            http=i.get("http")
+        except:
+            port=[]
+            return port
+        
         k=get_port_number(http.get("address"))
         if k is not None:
             port.append(k)
