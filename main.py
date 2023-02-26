@@ -5,15 +5,39 @@ import requests
 import json
 import time
 from typing import Union
-from GetPlatformInfo import show_os_info
+
 from MsAPIPost import *
 from StartUp import *
 # import values
 
 app = FastAPI()
 
+def read_settings(filename):    
+    with open(filename, "r") as set_file:
+        setf=json.load(set_file)
+        set_file.close()
+        return setf
+# 一个参数
 tenant = "common"
+
+def get_login_info(port):
+    userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")
+    return userinfo.text
+# 获得登录的QQ号
+
 # used for Microsoft Account login
+def use_api(url,data,token):
+    NoneK=[]
+    for key in data.keys():
+        if data[key]==None:
+            NoneK.append(key)
+    for key in NoneK:
+        del data[key]
+    POST = requests.post(url,data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
+    ret=data
+    ret.update({"token":token,"POST RET":str(POST)})
+    ret.update(json.loads(POST.text))
+    return ret
 
 def get_token(filename):
     """
@@ -38,6 +62,7 @@ def get_token(filename):
         save_token(filename="token.temp",content=get_token_from_code(url,dataobj))
         tokf=read_token(filename)
     return tokf["access_token"]
+
 
 def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
     """
@@ -65,7 +90,8 @@ def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
         dataobj.update({"code":authoriationCode,"redirect_uri":RedirectURL})
     return dataobj
 
-def save_token(filename,content):
+
+def save_token(filename,content): # 保存登录令牌
     f=open(filename,"w")
     # time.time返回当前时间的时间戳
     content.update({"load_time":time.time()})
@@ -73,23 +99,23 @@ def save_token(filename,content):
     f.write(json.dumps(content,ensure_ascii=False))
     f.close()
 
-def init(debug=False):
-    # 让我猜猜。。如果debug，port=12000，并且打印token；如果不debug，获取gocqhttp的端口号（其实没有），打开微软登录界面
+
+def init(debug=False): # 初始化
+    # 如果debug，打印token；如果不debug，运行gocqhttp，打印token
     if not(debug):
-        # It starts the gocqhttp server
-        port=start_gocqhttp(show_os_info(ShowAllInTerminal=False))
-    else:
-        port=12000
-    if debug:
-        print(get_token("token.temp"))
-    else:
+        start_gocqhttp()
         try:
             print(get_token("token.temp"))
         except:           
             login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
 
+    else:
+        print(get_token("token.temp"))
+    
+            
+
 @app.get("/{login}")
-# error居然还是参数
+# error是参数
 async def read_item(state: str, error: Union[str, None] = None, error_description: Union[str, None] = None, code: Union[str, None] = None):
     """
     It reads the UUID from the file, and if the UUID matches the state, it will read the config file and
@@ -153,7 +179,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
             if os.name=='nt':
                 os.system("del -f -q .UUID.temp")
             elif os.name=='posix':
-                os.name("rm -f .UUID.temp")
+                os.system("rm -f ./.UUID.temp")
         except:
             tmp.update({"error":"token UNABLE to save. Please copy the information here."})
             # The browser shows the information too.
@@ -161,6 +187,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
 
 @app.post("/MsCalendar")
 async def create_event(data:DefaultMsEvent):
+    # 一个用来测试的端口，对接微软API
     """
     It creates an event in your Outlook calendar.
     
@@ -190,35 +217,39 @@ async def create_event(data:DefaultMsEvent):
         token=get_token("token.temp")
     except:
         token=None
-    NoneK=[]
-    for key in data.keys():
-        if data[key]==None:
-            NoneK.append(key)
-    for key in NoneK:
-        del data[key]
-    POST = requests.post(f"https://graph.microsoft.com/v1.0/me/events",data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
-    ret=data
-    ret.update({"token":token,"POST RET":str(POST)})
-    ret.update(json.loads(POST.text))
-    return ret
+
+    ret=use_api(url="https://graph.microsoft.com/v1.0/me/events",data=data.dict(),token=token)
+    
+    return ret # login-success.html
 
 @app.post("/QQ")
 async def read_item(data: Dict):
-# A function that writes the data to a file.
-    k = 1
-    if data["post_type"] != "meta_event":
-        while k == 1:
+    k = True
+    if data["post_type"] != "meta_event" or True: # 判断不是测试连通性的post
+        while k:
             try:
                 # It opens the file in append mode.
                 f = open("QQlog.json", "a")
-                f.write(json.dumps(data, ensure_ascii=False) + ",\n")
+                f.write(json.dumps(data, ensure_ascii=False) + ",\n") # 记录日志。
+                # 此处是解析信息，从data取相关的内容
                 f.close()
             except:
-                k = 1
+                k = True # 失败，要重试；次数无限不合适，但是先不管
             else:
-                k = 0
+                k = False # 成功
     return {"Sta": "OK"} # Return anything you want in fact.
-   
+
+@app.get("/DDLs")
+async def get_DDLs():
+    settings=read_settings("settings.json")
+    with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
+        ret={"userInformation":get_login_info(port=get_cqhttp_httpserver_port(f))}
+        f.close()
+    DDLlist=[]
+    # get DDLs from SQL 此处是下一个要做的事情
+    ret.update({"DDL":DDLlist})
+    return ret
+
 if __name__ == "__main__":
     init(debug=False)
     uvicorn.run("main:app", reload=True)

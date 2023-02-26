@@ -4,7 +4,38 @@ import webbrowser
 import uuid
 import json
 import os
-
+from GetPlatformInfo import show_os_info
+def get_cqhttp_httpserver_port(file):
+    def get_port_number(ip_address):# bing AI 写的，反正我看不懂
+        # 匹配IP地址和可选的端口号
+        pattern = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?"
+        # 搜索字符串中的匹配项
+        match = re.search(pattern, ip_address)
+        if match:
+            # 如果找到匹配项，返回第二个捕获组（即端口号）中的数字
+            port = match.group(2)
+            if port:
+                return int(port[1:]) # 去掉冒号
+            else:
+                return None # 如果没有端口号，返回None
+        else:
+            return None # 如果没有匹配项，返回None
+    port =[]
+    c=file.read()
+    data=yaml.load(c,Loader=yaml.FullLoader)
+    servers=data['servers']
+    
+    for i in servers:
+        try:
+            http=i.get("http")
+        except:
+            port=[]
+            return port
+        
+        k=get_port_number(http.get("address"))
+        if k is not None:
+            port.append(k)
+    return port
 def ReadProfile(f):
     with open(f, 'r') as cfg_file:
         prof = json.load(cfg_file)
@@ -19,7 +50,7 @@ def ReadProfile(f):
             prof=None
     return prof # return a dictionary
 
-def start_gocqhttp(sys):
+def start_gocqhttp(sys=show_os_info(ShowAllInTerminal=False)):
     print("Try to run go-cqhttp.")
     # Can only start CQ-HTTP for Windows.
     s=sys["system"]
@@ -36,39 +67,13 @@ def start_gocqhttp(sys):
         print("https://github.com/Mrs4s/go-cqhttp/releases")
         print("https://docs.go-cqhttp.org/guide/quick_start.html#%E5%A6%82%E4%BD%95%E8%87%AA%E5%B7%B1%E6%9E%84%E5%BB%BA")
     f=None
-    def get_cqhttp_httpserver_port(file):
-        def get_port_number(ip_address):# bing AI 写的，反正我看不懂
-            # 匹配IP地址和可选的端口号
-            pattern = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?"
-            # 搜索字符串中的匹配项
-            match = re.search(pattern, ip_address)
-            if match:
-                # 如果找到匹配项，返回第二个捕获组（即端口号）中的数字
-                port = match.group(2)
-                if port:
-                    return int(port[1:]) # 去掉冒号
-                else:
-                    return None # 如果没有端口号，返回None
-            else:
-                return None # 如果没有匹配项，返回None
-        port =[]
-        c=file.read()
-        data=yaml.load(c,Loader=yaml.FullLoader)
-        servers=data.get('servers')
-        
-        for i in servers:
-            http=i.get("http")
-            k=get_port_number(http.get("address"))
-            if k is not None:
-                port.append(k)
-        return port
+
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
         port=get_cqhttp_httpserver_port(f) 
         f.close()
     if port==0:
         print("Error:YAML of Go-cqhttp Error")
     print(port)
-    return port
 
 def make_UUID(temp):
     """
