@@ -24,7 +24,7 @@ def get_cqhttp_httpserver_port(file):
     c=file.read()
     data=yaml.load(c,Loader=yaml.FullLoader)
     servers=data['servers']
-    
+    # 
     for i in servers:
         try:
             http=i.get("http")
