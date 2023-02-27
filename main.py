@@ -225,12 +225,12 @@ async def create_event(data:DefaultMsEvent):
 @app.post("/QQ")
 async def read_item(data: Dict):
     k = True
-    if data["post_type"] != "meta_event" or True: # 判断不是测试连通性的post
+    if data["post_type"] == "message" : # 判断不是测试连通性的post
         while k:
             try:
                 # It opens the file in append mode.
                 f = open("QQlog.json", "a")
-                f.write(json.dumps(data, ensure_ascii=False) + ",\n") # 记录日志。
+                f.write(json.dumps(data, ensure_ascii=False) + "\n") # 记录日志。
                 # 此处是解析信息，从data取相关的内容
                 f.close()
             except:
