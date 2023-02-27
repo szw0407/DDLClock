@@ -20,6 +20,7 @@ def read_settings(filename):
 # 一个参数
 tenant = "common"
 
+
 def get_login_info(port):
     userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")
     return userinfo.text
@@ -45,6 +46,7 @@ def get_token(filename):
 
     :param filename: The name of the file where the token is stored
     :return: The access token is being returned.
+
     """
     def read_token(fn):
         tok_file=open(fn,"r")
@@ -110,7 +112,10 @@ def init(debug=False): # 初始化
             login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
 
     else:
-        print(get_token("token.temp"))
+        try:   
+            print(get_token("token.temp"))
+        except:
+            pass
     
             
 
@@ -228,17 +233,23 @@ async def read_item(data: Dict):
     if data["post_type"] == "message" : # 判断不是测试连通性的post
         while k:
             try:
+                s=json.dumps(data, ensure_ascii=False)
                 # It opens the file in append mode.
                 f = open("QQlog.json", "a")
                 f.write(json.dumps(data, ensure_ascii=False) + "\n") # 记录日志。
                 # 此处是解析信息，从data取相关的内容
                 f.close()
+                
             except:
                 k = True # 失败，要重试；次数无限不合适，但是先不管
             else:
+                f = open("QQlog-utf8.json", "ab")
+                f.write((s + ",\n").encode('utf-8')) # 记录日志。
+                # 此处是解析信息，从data取相关的内容
+                f.close()
                 k = False # 成功
     return {"Sta": "OK"} # Return anything you want in fact.
-
+    
 @app.get("/DDLs")
 async def get_DDLs():
     settings=read_settings("settings.json")
