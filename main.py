@@ -5,21 +5,20 @@ import requests
 import json
 import time
 from typing import Union
-
+from QQMsg import *
 from MsAPIPost import *
 from StartUp import *
 # import values
 
 app = FastAPI()
 
-def read_settings(filename):    
+def read_settings(filename):
     with open(filename, "r") as set_file:
         setf=json.load(set_file)
         set_file.close()
         return setf
 # 一个参数
 tenant = "common"
-
 
 def get_login_info(port):
     userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")

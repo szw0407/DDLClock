@@ -55,7 +55,7 @@ def start_gocqhttp(sys=show_os_info(ShowAllInTerminal=False)):
     # Can only start CQ-HTTP for Windows.
     s=sys["system"]
     if s=='Windows':
-        os.system("cd go-cqhttp && go-cqhttp.bat")
+        os.system("cd go-cqhttp && go-cqhttp.exe")
     elif s=='Linux':
         print("[Warn] Linux auto start is not supported now.")        
         print("[INFO] Linux AMD64 release deb file prepared in /go-cqhttp/LinuxRelease folder.")
