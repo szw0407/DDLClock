@@ -1,4 +1,6 @@
 
 
-async def func():
-    return
+async def list_ddls():
+    ls=[]
+
+    return ls
