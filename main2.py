@@ -4,7 +4,7 @@ import crud
 import models
 import schemas
 from database import SessionLocal, engine
-import uvicorn
+
 
 # 创建数据库表格（如果不存在）——此处有报错！！
 models.Base.metadata.create_all(bind=engine) # 为什么要这样import？不理解，直接用base不就好了（恼）
