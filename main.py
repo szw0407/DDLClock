@@ -5,13 +5,12 @@ import requests
 import json
 import time
 from typing import Union
-
+from sql_app import ddlrw
 import jionlp as jio
-
-
 from MsAPIPost import *
 from StartUp import *
 from nlp import nlp
+import QQMsg
 # import values
 
 app = FastAPI()
@@ -232,37 +231,44 @@ async def create_event(data:DefaultMsEvent):
 
 @app.post("/QQ")
 async def read_item(data: Dict):
-    k = True
-    if data["post_type"] == "message" : 
-        while k:
-            try:
-                s=json.dumps(data, ensure_ascii=False)
-                t=json.loads(s)
-                res = jio.ner.extract_time(s, time_base=time.time())
-                if res != [] and t["message_type"]=="group" :
-                    nlp(res,t["group_id"],t["message"])
-                    # f = open("QQlog-utf8.json", "ab")
-                    # f.write((s + "\n").encode('utf-8')) # 记录日志。
-                    # # 此处是解析信息，从data取相关的内容
-                    # f.close()            
-            except:
-                k = False
-                print('false')
-            else:
-                k = False # 成功
+    
+    if data["post_type"] == "message" and data["message_type"]=="group" : 
+        
+        try:
+            # s=json.dumps(data, ensure_ascii=False)
+            
+            res = jio.ner.extract_time(data["message"], time_base=time.time())
+            # print(t["message_type"])
+            if res != [] :
+                print(nlp(res,data["group_id"],data["message"]))
+                # f = open("QQlog-utf8.json", "ab")
+                # f.write((s + "\n").encode('utf-8')) # 记录日志。
+                # # 此处是解析信息，从data取相关的内容
+                # f.close()            
+        except:
+            
+            print('false')
+        else:
+            with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
+                port=get_cqhttp_httpserver_port(f)[0]
+                f.close()
+            ls=QQMsg.list_ddls(url=f"http://127.0.0.1:{port}",grpid=data["group_id"],msgsq=data["message_seq"]) # 成功
+            print(ls) # 爬取上面19条消息
     return {"Sta": "OK"} # Return anything you want in fact.
     
-@app.get("/DDLs")
+@app.get("/")
 async def get_DDLs():
-    settings=read_settings("settings.json")
+    # settings=read_settings("settings.json")
+    ret={}
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
-        ret={"userInformation":get_login_info(port=get_cqhttp_httpserver_port(f))}
+        ret={"userInformation":get_login_info(port=get_cqhttp_httpserver_port(f)[0])}
         f.close()
     DDLlist=[]
-    # get DDLs from SQL 此处是下一个要做的事情
+    x=ddlrw.read_items()
+    DDLlist.append(x)
     ret.update({"DDL":DDLlist})
     return ret
 
 if __name__ == "__main__":
-    init(debug=False)
+    init(debug=True)
     uvicorn.run("main:app", reload=True)

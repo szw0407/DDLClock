@@ -1,16 +1,23 @@
 from typing import List
 
-class Time_msg(object):
+from sql_app import ddlrw
+class Time_msg:
+    __group__=0
+    __text__=""
+    __time__="2006-01-02T15:04:05"
+    __type__=""
+    __content__=""
     def __init__(self,group,text,type,time,content):
-        self.__group = group
-        self.__text = text
-        self.__type = type
-        self.__time = time
-        self.__content = content
+        self.__group__ = group
+        self.__text__ = text
+        self.__type__ = type
+        self.__time__ = time
+        self.__content__ = content
 
     # def get_group(self):
     #     return self.__group
-    
+    def record(self):
+        ddlrw.create_item_for_user()
     # def get_type(self):
     #     return self.__type
     
@@ -51,10 +58,10 @@ def nlp(data:List,group,content):
             t = dt["detail"]["time"]
             t_msg = Time_msg(gr,tx,tp,t,content)
 
-            print(t_msg)
+            return t_msg
         except:
             print("error")
-
+            return "error"
 
 
 

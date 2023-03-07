@@ -4,15 +4,23 @@ from sqlalchemy.orm import relationship
 from .database import Base
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    qqnumber = Column(Integer, unique=True, index=True)
+    hashed_password = Column(String)
+    is_active = Column(Boolean, default=True)
+
+    items = relationship("Item", back_populates="owner")
+
 
 class Item(Base):
     __tablename__ = "items"
 
     id = Column(Integer, primary_key=True, index=True)
-    group_number = Column(String, index=True)  
-    text = Column(String)  
-    type = Column(String)
-    time = Column
-    content = Column(String)
+    title = Column(String, index=True)  # 群聊名称
+    description = Column(String, index=True)  # 群聊消息
+    owner_id = Column(Integer, ForeignKey("users.id"))
 
-    
+    owner = relationship("User", back_populates="items")

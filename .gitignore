@@ -13,3 +13,4 @@ settings.json
 /go-cqhttp/device.json
 /go-cqhttp/session.token
 *temp*
+__pycache__
