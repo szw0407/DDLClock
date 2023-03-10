@@ -6,6 +6,7 @@ import json
 import time
 from typing import Union
 from sql_app import ddlrw
+import sys
 import jionlp as jio
 from MsAPIPost import *
 from StartUp import *
@@ -270,5 +271,5 @@ async def get_DDLs():
     return ret
 
 if __name__ == "__main__":
-    init(debug=True)
+    init(debug=True if sys.gettrace() else False)
     uvicorn.run("main:app", reload=True)
