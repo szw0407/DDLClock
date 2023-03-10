@@ -251,5 +251,5 @@ async def get_DDLs():
     return ret
 
 if __name__ == "__main__":
-    init(debug=False)
+    init(debug=True if sys.gettrace() else False)
     uvicorn.run("main:app", reload=True)
