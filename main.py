@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-import os
+import os,sys
 import uvicorn
 import requests
 import json
@@ -270,5 +270,5 @@ async def get_DDLs():
     return ret
 
 if __name__ == "__main__":
-    init(debug=True)
+    init(debug= True if sys.gettrace() else False)
     uvicorn.run("main:app", reload=True)
