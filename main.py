@@ -6,13 +6,17 @@ import json
 import time
 from typing import Union
 
+import jionlp as jio
+
+
 from MsAPIPost import *
 from StartUp import *
+from nlp import nlp
 # import values
 
 app = FastAPI()
 
-def read_settings(filename):    
+def read_settings(filename):
     with open(filename, "r") as set_file:
         setf=json.load(set_file)
         set_file.close()
@@ -45,6 +49,7 @@ def get_token(filename):
 
     :param filename: The name of the file where the token is stored
     :return: The access token is being returned.
+
     """
     def read_token(fn):
         tok_file=open(fn,"r")
@@ -110,7 +115,10 @@ def init(debug=False): # 初始化
             login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
 
     else:
-        print(get_token("token.temp"))
+        try:   
+            print(get_token("token.temp"))
+        except:
+            pass
     
             
 
@@ -225,20 +233,25 @@ async def create_event(data:DefaultMsEvent):
 @app.post("/QQ")
 async def read_item(data: Dict):
     k = True
-    if data["post_type"] != "meta_event" or True: # 判断不是测试连通性的post
+    if data["post_type"] == "message" : 
         while k:
             try:
-                # It opens the file in append mode.
-                f = open("QQlog.json", "a")
-                f.write(json.dumps(data, ensure_ascii=False) + ",\n") # 记录日志。
-                # 此处是解析信息，从data取相关的内容
-                f.close()
+                s=json.dumps(data, ensure_ascii=False)
+                t=json.loads(s)
+                res = jio.ner.extract_time(s, time_base=time.time())
+                if res != [] and t["message_type"]=="group" :
+                    nlp(res,t["group_id"],t["message"])
+                    # f = open("QQlog-utf8.json", "ab")
+                    # f.write((s + "\n").encode('utf-8')) # 记录日志。
+                    # # 此处是解析信息，从data取相关的内容
+                    # f.close()            
             except:
-                k = True # 失败，要重试；次数无限不合适，但是先不管
+                k = False
+                print('false')
             else:
                 k = False # 成功
     return {"Sta": "OK"} # Return anything you want in fact.
-
+    
 @app.get("/DDLs")
 async def get_DDLs():
     settings=read_settings("settings.json")
