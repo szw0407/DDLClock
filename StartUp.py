@@ -1,11 +1,14 @@
 import re
+import shutil
 import yaml
 import webbrowser
 import uuid
 import json
 import os
+import subprocess
+import threading
 from GetPlatformInfo import show_os_info
-def get_cqhttp_httpserver_port(file):
+def get_cqhttp_httpserver_port(file,useWS=False):
     def get_port_number(ip_address):# bing AI 写的，反正我看不懂
         # 匹配IP地址和可选的端口号
         pattern = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?"
@@ -20,22 +23,36 @@ def get_cqhttp_httpserver_port(file):
                 return None # 如果没有端口号，返回None
         else:
             return None # 如果没有匹配项，返回None
+    
     port =[]
+    wsport=[]
     c=file.read()
     data=yaml.load(c,Loader=yaml.FullLoader)
+
     servers=data['servers']
-    # 
+    # 读取http服务器
     for i in servers:
         try:
-            http=i.get("http")
+            http=i["http"]
         except:
             port=[]
-            return port
-        
-        k=get_port_number(http.get("address"))
-        if k is not None:
-            port.append(k)
-    return port
+        else:
+            k=get_port_number(http.get("address"))
+            if k is not None:
+                port.append(k)
+        try:
+            ws=i.get["ws-reverse"]
+        except:
+            wsport=[]
+        else:
+            k=get_port_number(ws.get("address"))
+            if k is not None:
+                wsport.append(k)     
+    if useWS:
+        return wsport
+    else:
+        return port
+
 def ReadProfile(f):
     with open(f, 'r') as cfg_file:
         prof = json.load(cfg_file)
@@ -50,16 +67,28 @@ def ReadProfile(f):
             prof=None
     return prof # return a dictionary
 
-def start_gocqhttp(sys=show_os_info(ShowAllInTerminal=False)):
+def start_gocqhttp():
+    sys=show_os_info(ShowAllInTerminal=False)
     print("Try to run go-cqhttp.")
     # Can only start CQ-HTTP for Windows.
     s=sys["system"]
     if s=='Windows':
-        os.system("cd go-cqhttp && go-cqhttp.exe")
+        m="win"
     elif s=='Linux':
-        print("[Warn] Linux auto start is not supported now.")        
-        print("[INFO] Linux AMD64 release deb file prepared in /go-cqhttp/LinuxRelease folder.")
-        print("[INFO] To get other versions or update it, please go to https://github.com/Mrs4s/go-cqhttp/releases")
+        # print("[Warn] Linux auto start is not supported now.") 
+        os.system("rm -f ./go-cqhttp/go-cqhttp")       
+        if sys["machine"]=="x86_64" or sys["machine"]=="AMD64":
+            os.system("cp ./go-cqhttp/LinuxRelease/x86-64/go-cqhttp ./go-cqhttp")
+        elif sys["machine"]=="aarch64":
+            os.system("cp ./go-cqhttp/LinuxRelease/ARM64/go-cqhttp ./go-cqhttp")
+        elif sys["machine"]=='i686' or sys["machine"]=='i386':
+            os.system("cp ./go-cqhttp/LinuxRelease/i386/go-cqhttp ./go-cqhttp")
+        elif sys["machine"]=='armv7l':
+            os.system("cp ./go-cqhttp/LinuxRelease/ARMv7/go-cqhttp ./go-cqhttp")
+        else:
+            m=sys["machine"]
+            print(f"[Warn] Auto start for {m} is not supported now.")
+        m="Linux"
     else:
         print(f"[Warn]You are running {s}. You might need to build the file on your own to run it.")
         print(f"[Info]You may go to GitHub releases to see whether a release for {s} is available or download the source code and build it using Golang.")
@@ -71,9 +100,9 @@ def start_gocqhttp(sys=show_os_info(ShowAllInTerminal=False)):
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
         port=get_cqhttp_httpserver_port(f) 
         f.close()
-    if port==0:
-        print("Error:YAML of Go-cqhttp Error")
+    
     print(port)
+    return m
 
 def make_UUID(temp):
     """

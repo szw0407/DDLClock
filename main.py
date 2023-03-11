@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import os,sys
-import uvicorn
+# import uvicorn
 import requests
 import json
 import time
@@ -108,17 +108,26 @@ def save_token(filename,content): # 保存登录令牌
 def init(debug=False): # 初始化
     # 如果debug，打印token；如果不debug，运行gocqhttp，打印token
     if not(debug):
-        start_gocqhttp()
+        p=start_gocqhttp()
+        if p=="win":
+            p1=subprocess.Popen("cd go-cqhttp && go-cqhttp.exe",shell=True)
+            
+        elif p=="Linux":
+            
+            p1=subprocess.Popen("cd ./go-cqhttp/ && ./go-cqhttp",shell=True)
+
         try:
             print(get_token("token.temp"))
         except:           
             login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
 
     else:
+        
         try:   
             print(get_token("token.temp"))
         except:
-            pass
+            print("No token")
+        return 0
     
             
 
@@ -271,5 +280,18 @@ async def get_DDLs():
     return ret
 
 if __name__ == "__main__":
-    init(debug=True if sys.gettrace() else False)
-    uvicorn.run("main:app", reload=True)
+    debug=True if sys.gettrace() else False
+    init(debug)
+    # uvicorn.run("main:app", reload=True)
+    subprocess.Popen("uvicorn main:app ", shell=True)
+    # 主进程等待一个输入
+    input("Press any key to exit...")
+    if os.name=='nt':
+    # 输入任何字符后，终止两个子进程
+        os.system("taskkill -f -im go-cqhttp.exe && taskkill -f -im uvicorn.exe")
+    else:
+        os.system("pkill go-cqhttp")
+        os.system("pkill uvicorn")
+        os.system("rm -f ./go-cqhttp/go-cqhttp")
+    print("Both processes are terminated.")
+    
