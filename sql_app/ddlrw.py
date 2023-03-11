@@ -32,14 +32,14 @@ def get_db():
 # 创建用户
 # @app.post("/users/{user_id}/items/", response_model=schemas.Item)
 def create_item_for_user(
-        user_id: int, item: schemas.ItemCreate, db: Session = get_db()
+        user_id: int, item: schemas.ItemCreate, db: Session = next(get_db())
 ):
     return crud.create_user_item(db=db, item=item, user_id=user_id)
 
 
 # 为用户创建群聊项目
 # @app.get("/users/", response_model=List[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = get_db()):
+def read_users(skip: int = 0, limit: int = 100, db: Session = next(get_db())):
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
 
@@ -47,7 +47,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = get_db()):
 # 读取所有用户
 
 # @app.get("/users/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = get_db()):
+def read_user(user_id: int, db: Session = next(get_db())):
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
         return {"msg":"UserNotFound"}
@@ -76,7 +76,7 @@ def read_items(skip: int = 0, limit: int = 100, db: Session = next(get_db())):
 # 读取全部群聊
 
 # @app.delete('/item/{item_id}', response_model=List[schemas.Item])
-def delete(item_id: int, db: Session = get_db()):
+def delete(item_id: int, db: Session = next(get_db())):
     db.query(models.Item).filter(models.Item.id == item_id).delete(
         synchronize_session=False)
     db.commit()
@@ -85,7 +85,7 @@ def delete(item_id: int, db: Session = get_db()):
 
 # 删除群聊项目
 # @app.put('/item/{item_id}')
-def update(item_id: int, blog: schemas.Item, db: Session = get_db()):
+def update(item_id: int, blog: schemas.Item, db: Session = next(get_db())):
     db.query(models.Item).filter(models.Item.id == item_id).update(blog.dict())
     db.commit()
     return {"msg": "数据成功更新！"}
@@ -93,7 +93,7 @@ def update(item_id: int, blog: schemas.Item, db: Session = get_db()):
 
 # 更新群聊
 # @app.delete('/user/{user_id}', response_model=List[schemas.User])
-def delete(user_id: int, db: Session = get_db()):
+def delete(user_id: int, db: Session = next(get_db())):
     db.query(models.User).filter(models.User.id == user_id).delete(synchronize_session=False)
     db.commit()
     return {"msg": "该用户已经删除"}
@@ -103,7 +103,7 @@ def delete(user_id: int, db: Session = get_db()):
 
 
 # @app.delete('/item/all', response_model=List[schemas.Item])
-def delete(db: Session = get_db()):
+def delete(db: Session = next(get_db())):
     db.query(models.Item).delete(
         synchronize_session=False)
     db.commit()
@@ -113,7 +113,7 @@ def delete(db: Session = get_db()):
 # 清除所有群聊
 
 # @app.delete('/user/all', response_model=List[schemas.User])
-def delete(db: Session = get_db()):
+def delete(db: Session = next(get_db())):
     db.query(models.User).delete(synchronize_session=False)
     db.query(models.Item).delete(synchronize_session=False)
     db.commit()

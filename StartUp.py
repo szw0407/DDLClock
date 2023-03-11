@@ -95,7 +95,7 @@ def start_gocqhttp():
         print("Below are pages you can refer to:")
         print("https://github.com/Mrs4s/go-cqhttp/releases")
         print("https://docs.go-cqhttp.org/guide/quick_start.html#%E5%A6%82%E4%BD%95%E8%87%AA%E5%B7%B1%E6%9E%84%E5%BB%BA")
-    f=None
+    
 
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
         port=get_cqhttp_httpserver_port(f) 
