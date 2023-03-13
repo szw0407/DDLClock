@@ -23,7 +23,7 @@ def get_db():
 
 @app.post("/groups/", response_model=schemas.Group)
 def create_group(group: schemas.GroupCreate, db: Session = Depends(get_db)):
-    db_group = crud.get_group_by_groupnumber(db, get_groupnumber=group.groupnumber).first()
+    db_group = crud.get_group_by_groupnumber(db, get_groupnumber=group.groupnumber)
     if db_group:
         raise HTTPException(status_code=400, detail="QQ already registered")
     return crud.create_group(db=db, group=group)
@@ -99,4 +99,13 @@ def delete(group_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"msg": "该用户已经删除"}
 
+
 # 删除用户
+
+@app.delete('/groups and items', response_model=List[schemas.Group])
+def delete(db: Session = Depends(get_db)):
+    db.query(models.Item).delete(synchronize_session=False)
+    db.query(models.Group).delete(synchronize_session=False)
+    db.commit()
+    return {"msg": "所有群聊已经删除"}
+# 删除所有
