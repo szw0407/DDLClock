@@ -3,7 +3,7 @@ from typing import List
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
-from .import crud, models, schemas
+from . import crud, models, schemas
 from .database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
@@ -38,6 +38,8 @@ def create_item_for_group(
 
 
 # 为用户创建群聊项目
+
+
 @app.get("/groups/", response_model=List[schemas.Group])
 def read_groups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     groups = crud.get_groups(db, skip=skip, limit=limit)
@@ -45,16 +47,6 @@ def read_groups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 
 
 # 读取所有用户
-
-@app.get("/groups/{group_id}", response_model=schemas.Group)
-def read_group(group_id: int, db: Session = Depends(get_db)):
-    db_group = crud.get_group(db, group_id=group_id)
-    if db_group is None:
-        raise HTTPException(status_code=404, detail="Group not found")
-    return db_group
-
-
-# 读取用户
 
 @app.get("/groups/get_groups_by_groupnumber", response_model=List[schemas.Group])
 def read_group_by_groupnumber(groupnumber: str, db: Session = Depends(get_db)):
@@ -65,6 +57,16 @@ def read_group_by_groupnumber(groupnumber: str, db: Session = Depends(get_db)):
 
 
 # 通过群号码读取群聊消息
+
+@app.get("/groups/{group_id}", response_model=schemas.Group)
+def read_group(group_id: int, db: Session = Depends(get_db)):
+    db_group = crud.get_group(db, group_id=group_id)
+    if db_group is None:
+        raise HTTPException(status_code=404, detail="Group not found")
+    return db_group
+
+
+# 读取用户
 
 
 @app.get("/items/", response_model=List[schemas.Item])
@@ -96,6 +98,5 @@ def delete(group_id: int, db: Session = Depends(get_db)):
     db.query(models.Group).filter(models.Group.id == group_id).delete(synchronize_session=False)
     db.commit()
     return {"msg": "该用户已经删除"}
-
 
 # 删除用户

@@ -10,7 +10,7 @@ def get_group(db: Session, group_id: int):
 # 通过id查询群聊
 
 def get_group_by_groupnumber(db: Session, get_groupnumber: str):
-    return db.query(models.Group).filter(models.Group.groupnumber == get_groupnumber)
+    return db.query(models.Group).filter(models.Group.groupnumber == get_groupnumber).all()
 
 
 # 通过号码查找群聊
