@@ -26,11 +26,11 @@ tenant = "common"
 
 def get_login_info(port):
     userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")
-    return userinfo.text
+    return json.loads(userinfo.text)
 # 获得登录的QQ号
 
 # used for Microsoft Account login
-def use_api(url,data,token):
+def use_api(url,data,token,preferences):
     NoneK=[]
     for key in data.keys():
         if data[key]==None:
@@ -227,16 +227,15 @@ async def create_event(data:DefaultMsEvent):
         - show
     """
     data=data.dict()
-    with open("settings.json", "r") as set_file:
-        setf=json.load(set_file)
-        set_file.close()
+    
     try:       
         token=get_token("token.temp")
     except:
         token=None
-
-    ret=use_api(url="https://graph.microsoft.com/v1.0/me/events",data=data.dict(),token=token)
-    
+    with open("settings.json", "r") as set_file:
+        setf=json.load(set_file)
+        set_file.close()
+    ret=use_api(url="https://graph.microsoft.com/v1.0/me/events",data=data,token=token,preferences=setf)
     return ret # login-success.html
 
 @app.post("/QQ")
@@ -266,16 +265,23 @@ async def read_item(data: Dict):
             print(ls) # 爬取上面19条消息
     return {"Sta": "OK"} # Return anything you want in fact.
     
-@app.get("/")
+@app.get("/ddls/")
 async def get_DDLs():
     # settings=read_settings("settings.json")
     ret={}
-    with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
-        ret={"userInformation":get_login_info(port=get_cqhttp_httpserver_port(f)[0])}
+    with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
+        p=get_cqhttp_httpserver_port(f)
+        for i in range(len(p)):
+            try:
+                ret={"userInformation":get_login_info(port=p[0])}
+            except:
+                pass
+        
         f.close()
     DDLlist=[]
     x=ddlrw.read_items()
-    DDLlist.append(x)
+    for i in x:
+        DDLlist.append(i)
     ret.update({"DDL":DDLlist})
     return ret
 
@@ -294,4 +300,3 @@ if __name__ == "__main__":
         os.system("pkill uvicorn")
         os.system("rm -f ./go-cqhttp/go-cqhttp")
     print("Both processes are terminated.")
-    
