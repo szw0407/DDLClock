@@ -5,7 +5,7 @@ import requests
 import json
 import time
 from typing import Union
-from sql_app import ddlrw
+from __qqddl__ import ddlrw
 import sys
 import jionlp as jio
 from MsAPIPost import *

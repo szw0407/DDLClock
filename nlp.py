@@ -1,6 +1,6 @@
 from typing import List
 
-from sql_app import ddlrw
+from __qqddl__ import ddlrw
 class Time_msg:
     __group__=0
     __text__=""
