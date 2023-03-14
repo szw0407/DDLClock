@@ -1,11 +1,13 @@
+from datetime import date
 from typing import List, Union
 
 from pydantic import BaseModel
 
 
 class ItemBase(BaseModel):
-    title: str
-    description: Union[str, None] = None
+    text: str
+    ddltime: Union[date, None] = None
+    status: str
 
 
 class ItemCreate(ItemBase):
@@ -20,19 +22,18 @@ class Item(ItemBase):
         orm_mode = True
 
 
-class UserBase(BaseModel):
-    qqnumber: int
+class GroupBase(BaseModel):
+    groupnumber: str
 
 
-class UserCreate(UserBase):
-    password: str
+class GroupCreate(GroupBase):
+    pass
 
 
-class User(UserBase):
+class Group(GroupBase):
     id: int
     is_active: bool
     items: List[Item] = []
 
     class Config:
         orm_mode = True
-
