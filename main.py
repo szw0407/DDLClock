@@ -1,6 +1,6 @@
+import contextlib
 from fastapi import FastAPI
 import os,sys
-# import uvicorn
 import requests
 import json
 import time
@@ -12,6 +12,7 @@ from MsAPIPost import *
 from StartUp import *
 from nlp import nlp
 import QQMsg
+import subprocess
 # import values
 
 app = FastAPI()
@@ -31,10 +32,7 @@ def get_login_info(port):
 
 # used for Microsoft Account login
 def use_api(url,data,token,preferences):
-    NoneK=[]
-    for key in data.keys():
-        if data[key]==None:
-            NoneK.append(key)
+    NoneK = [key for key in data.keys() if data[key] is None]
     for key in NoneK:
         del data[key]
     POST = requests.post(url,data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
@@ -52,12 +50,13 @@ def get_token(filename):
 
     """
     def read_token(fn):
-        tok_file=open(fn,"r")
-        # Loading the file into a dictionary.
-        tokf=json.load(tok_file)
-        tok_file.close()
+        with open(fn,"r") as tok_file:
+            # Loading the file into a dictionary.
+            tokf=json.load(tok_file)
+            
         return tokf
-    tokf=read_token(filename)    
+
+    tokf=read_token(filename)
     # 如果超时重新拉取token
     if tokf["load_time"]+tokf["expires_in"]<time.time():
         # The URL for getting the token.
@@ -81,28 +80,26 @@ def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
     get a new access token
     :return: A dictionary with the client_id, scope, grant_type, refresh_token, code, and redirect_uri
     """
-    cfg_file=open(filename, 'r')
-    prof = json.load(cfg_file)
-    cfg_file.close()
+    with open(filename, 'r') as cfg_file:
+        prof = json.load(cfg_file)
     ClientID = prof["client_ID"]
     RedirectURL = prof["redirect_URL"]
     ScopeList = prof["scope"].replace("%20"," ")
    # Preparing the POST object for getting the token.
     dataobj={"client_id":ClientID,"scope":ScopeList,"grant_type":grantType}
     if grantType=="refresh_token":
-        dataobj.update({"refresh_token":refreshToken})
+        dataobj["refresh_token"] = refreshToken
     elif grantType=="authorization_code":
-        dataobj.update({"code":authoriationCode,"redirect_uri":RedirectURL})
+        dataobj |= {"code":authoriationCode,"redirect_uri":RedirectURL}
     return dataobj
 
 
 def save_token(filename,content): # 保存登录令牌
-    f=open(filename,"w")
-    # time.time返回当前时间的时间戳
-    content.update({"load_time":time.time()})
-    # 不转义非ASCII字符
-    f.write(json.dumps(content,ensure_ascii=False))
-    f.close()
+    with open(filename,"w") as f:
+        # time.time返回当前时间的时间戳
+        content.update({"load_time":time.time()})
+        # 不转义非ASCII字符
+        f.write(json.dumps(content,ensure_ascii=False))
 
 
 def init(debug=False): # 初始化
@@ -111,28 +108,27 @@ def init(debug=False): # 初始化
         p=start_gocqhttp()
         if p=="win":
             p1=subprocess.Popen("cd go-cqhttp && go-cqhttp.exe",shell=True)
-            
+
         elif p=="Linux":
-            
+
             p1=subprocess.Popen("cd ./go-cqhttp/ && ./go-cqhttp",shell=True)
 
         try:
             print(get_token("token.temp"))
-        except:           
+        except Exception:
             login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
 
     else:
-        
-        try:   
+
+        try:
             print(get_token("token.temp"))
-        except:
+        except Exception:
             print("No token")
         return 0
     
             
 
 @app.get("/{login}")
-# error是参数
 async def read_item(state: str, error: Union[str, None] = None, error_description: Union[str, None] = None, code: Union[str, None] = None):
     """
     It reads the UUID from the file, and if the UUID matches the state, it will read the config file and
@@ -156,39 +152,32 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
     # 有个疑惑，下面的error是会互相覆盖的，是否可以改进
     # 读取UUID
     try:
-        f = open(".UUID.temp", "r")
-        UUID = f.read()
-        f.close()
-    except:
+        with open(".UUID.temp", "r") as f:
+            UUID = f.read()
+    except Exception:
         tmp={"error":"cannot load UUID"}
         UUID=""
     # 读取config，并把授权代码（authoriationcode)和granttype塞进同一个字典中
     try:
         dataobj=read_config(authoriationCode=code,filename='config.json',grantType="authorization_code")
-        # to prepare GetToken POST object
-    except:
+    except Exception:
         tmp={"error":"cannot load Profile"}
         dataobj=None
 
     if state == UUID:
         if dataobj is not None:
             if error is not None:
-                tmp.update({"error": error, "error_description": error_description})
+                tmp |= {"error": error, "error_description": error_description}
             elif code is not None:
-                tmp.update({"code": code}) # 这一行是没用的吧
+                tmp["code"] = code
                 url=f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
                 # 核心步骤1，获取token，可是上面为什么要update tmp
                 tmp=get_token_from_code(url,dataobj)
             else:
                 tmp.update({"error":"No error but no code returned"})
-    else:
-        try:
-            tmp["error"]
-        except:
-            tmp.update({"error": "state != UUID"})
-    try:
-        tmp["error"] # If it has any errors above, do not write down!
-    except:
+    elif tmp.get("error") != None:
+        tmp.update({"error": "state != UUID"})
+    if tmp.get("error") is None:
         try:
             # 核心步骤2，把获取到的token写入临时文件
             save_token(filename="token.temp",content=tmp)
@@ -197,9 +186,8 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
                 os.system("del -f -q .UUID.temp")
             elif os.name=='posix':
                 os.system("rm -f ./.UUID.temp")
-        except:
+        except Exception:
             tmp.update({"error":"token UNABLE to save. Please copy the information here."})
-            # The browser shows the information too.
     return tmp
 
 @app.post("/MsCalendar")
@@ -227,40 +215,41 @@ async def create_event(data:DefaultMsEvent):
         - show
     """
     data=data.dict()
-    
-    try:       
+
+    try:
         token=get_token("token.temp")
-    except:
+    except Exception:
         token=None
     with open("settings.json", "r") as set_file:
         setf=json.load(set_file)
-        set_file.close()
-    ret=use_api(url="https://graph.microsoft.com/v1.0/me/events",data=data,token=token,preferences=setf)
-    return ret # login-success.html
+
+    return use_api(
+        url="https://graph.microsoft.com/v1.0/me/events",
+        data=data,
+        token=token,
+        preferences=setf,
+    )
 
 @app.post("/QQ")
 async def read_item(data: Dict):
     
-    if data["post_type"] == "message" and data["message_type"]=="group" : 
+    if data["post_type"] == "message" and data["message_type"]=="group": 
         
         try:
             # s=json.dumps(data, ensure_ascii=False)
-            
+
             res = jio.ner.extract_time(data["message"], time_base=time.time())
             # print(t["message_type"])
             if res != [] :
-                print(nlp(res,data["group_id"],data["message"]))
-                # f = open("QQlog-utf8.json", "ab")
-                # f.write((s + "\n").encode('utf-8')) # 记录日志。
-                # # 此处是解析信息，从data取相关的内容
-                # f.close()            
-        except:
-            
+                info=nlp(res,data["group_id"],data["message"])
+                print(info)
+           
+        except Exception:
             print('false')
         else:
             with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
                 port=get_cqhttp_httpserver_port(f)[0]
-                f.close()
+
             ls=QQMsg.list_ddls(url=f"http://127.0.0.1:{port}",grpid=data["group_id"],msgsq=data["message_seq"]) # 成功
             print(ls) # 爬取上面19条消息
     return {"Sta": "OK"} # Return anything you want in fact.
@@ -271,22 +260,17 @@ async def get_DDLs():
     ret={}
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
         p=get_cqhttp_httpserver_port(f)
-        for i in range(len(p)):
-            try:
+        for _ in range(len(p)):
+            with contextlib.suppress(Exception):
                 ret={"userInformation":get_login_info(port=p[0])}
-            except:
-                pass
-        
         f.close()
-    DDLlist=[]
     x=ddlrw.read_items()
-    for i in x:
-        DDLlist.append(i)
+    DDLlist = list(x)
     ret.update({"DDL":DDLlist})
     return ret
 
 if __name__ == "__main__":
-    debug=True if sys.gettrace() else False
+    debug = bool(sys.gettrace())
     init(debug)
     # uvicorn.run("main:app", reload=True)
     subprocess.Popen("uvicorn main:app ", shell=True)

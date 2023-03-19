@@ -1,28 +1,22 @@
 import re
-import shutil
+
 import yaml
 import webbrowser
 import uuid
 import json
 import os
-import subprocess
-import threading
+
 from GetPlatformInfo import show_os_info
+def get_port_number(ip_address):# bing AI 写的，反正我看不懂
+    # 匹配IP地址和可选的端口号
+    pattern = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?"
+    if not (match := re.search(pattern, ip_address)):
+        return None # 如果没有匹配项，返回None
+    # 如果找到匹配项，返回第二个捕获组（即端口号）中的数字
+    port = match[2]
+    return int(port[1:]) if port else None
+
 def get_cqhttp_httpserver_port(file,useWS=False):
-    def get_port_number(ip_address):# bing AI 写的，反正我看不懂
-        # 匹配IP地址和可选的端口号
-        pattern = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?"
-        # 搜索字符串中的匹配项
-        match = re.search(pattern, ip_address)
-        if match:
-            # 如果找到匹配项，返回第二个捕获组（即端口号）中的数字
-            port = match.group(2)
-            if port:
-                return int(port[1:]) # 去掉冒号
-            else:
-                return None # 如果没有端口号，返回None
-        else:
-            return None # 如果没有匹配项，返回None
     
     port =[]
     wsport=[]
@@ -34,24 +28,21 @@ def get_cqhttp_httpserver_port(file,useWS=False):
     for i in servers:
         try:
             http=i["http"]
-        except:
+        except Exception:
             port=[]
         else:
             k=get_port_number(http.get("address"))
             if k is not None:
                 port.append(k)
         try:
-            ws=i.get["ws-reverse"]
-        except:
+            ws=i["ws-reverse"]
+        except Exception:
             wsport=[]
         else:
             k=get_port_number(ws.get("address"))
             if k is not None:
-                wsport.append(k)     
-    if useWS:
-        return wsport
-    else:
-        return port
+                wsport.append(k)
+    return wsport if useWS else port
 
 def ReadProfile(f):
     with open(f, 'r') as cfg_file:
@@ -61,8 +52,7 @@ def ReadProfile(f):
             prof["client_ID"]
             prof["redirect_URL"]
             prof["scope"]
-            # to check whether the file include the essentials
-        except:
+        except Exception:
             print("Err:File config.json Error")
             prof=None
     return prof # return a dictionary
@@ -72,35 +62,35 @@ def start_gocqhttp():
     print("Try to run go-cqhttp.")
     # Can only start CQ-HTTP for Windows.
     s=sys["system"]
-    if s=='Windows':
-        m="win"
-    elif s=='Linux':
-        # print("[Warn] Linux auto start is not supported now.") 
-        os.system("rm -f ./go-cqhttp/go-cqhttp")       
-        if sys["machine"]=="x86_64" or sys["machine"]=="AMD64":
-            os.system("cp ./go-cqhttp/LinuxRelease/x86-64/go-cqhttp ./go-cqhttp")
-        elif sys["machine"]=="aarch64":
-            os.system("cp ./go-cqhttp/LinuxRelease/ARM64/go-cqhttp ./go-cqhttp")
-        elif sys["machine"]=='i686' or sys["machine"]=='i386':
-            os.system("cp ./go-cqhttp/LinuxRelease/i386/go-cqhttp ./go-cqhttp")
-        elif sys["machine"]=='armv7l':
-            os.system("cp ./go-cqhttp/LinuxRelease/ARMv7/go-cqhttp ./go-cqhttp")
-        else:
-            m=sys["machine"]
-            print(f"[Warn] Auto start for {m} is not supported now.")
-        m="Linux"
-    else:
-        print(f"[Warn]You are running {s}. You might need to build the file on your own to run it.")
-        print(f"[Info]You may go to GitHub releases to see whether a release for {s} is available or download the source code and build it using Golang.")
-        print("Below are pages you can refer to:")
-        print("https://github.com/Mrs4s/go-cqhttp/releases")
-        print("https://docs.go-cqhttp.org/guide/quick_start.html#%E5%A6%82%E4%BD%95%E8%87%AA%E5%B7%B1%E6%9E%84%E5%BB%BA")
+    match s:
     
+        case 'Linux':
+            # print("[Warn] Linux auto start is not supported now.") 
+            os.system("rm -f ./go-cqhttp/go-cqhttp")
+            if sys["machine"] in ["x86_64", "AMD64"]:
+                os.system("cp ./go-cqhttp/LinuxRelease/x86-64/go-cqhttp ./go-cqhttp")
+            elif sys["machine"]=="aarch64":
+                os.system("cp ./go-cqhttp/LinuxRelease/ARM64/go-cqhttp ./go-cqhttp")
+            elif sys["machine"] in ['i686', 'i386']:
+                os.system("cp ./go-cqhttp/LinuxRelease/i386/go-cqhttp ./go-cqhttp")
+            elif sys["machine"]=='armv7l':
+                os.system("cp ./go-cqhttp/LinuxRelease/ARMv7/go-cqhttp ./go-cqhttp")
+            else:
+                m=sys["machine"]
+                print(f"[Warn] Auto start for {m} is not supported now.")
+            m="Linux"
+        case 'Windows':
+            m="win"
+        case _:
+            print(f"[Warn]You are running {s}. You might need to build the file on your own to run it.")
+            print(f"[Info]You may go to GitHub releases to see whether a release for {s} is available or download the source code and build it using Golang.")
+            print("Below are pages you can refer to:")
+            print("https://github.com/Mrs4s/go-cqhttp/releases")
+            print("https://docs.go-cqhttp.org/guide/quick_start.html#%E5%A6%82%E4%BD%95%E8%87%AA%E5%B7%B1%E6%9E%84%E5%BB%BA")
+
 
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f: 
         port=get_cqhttp_httpserver_port(f) 
-        f.close()
-    
     print(port)
     return m
 
