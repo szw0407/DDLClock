@@ -45,9 +45,11 @@ def create_group_item(db: Session, item: schemas.ItemCreate):
     return db_item
 
 def modify_group(db:Session, group:schemas.GroupCreate):
-    # db_group = models.Group(group_number=group.group_number,group_name=group.group_name,group_ren=group.group_ren,is_active=group.is_active)
-    # return db.query(models.Group).filter(models.Group.group_number == db_group.group_number).update(db_group)
-    return None
+    db_group = models.Group(**group.dict())
+    db.query(models.Group).filter(models.Group.group_number == db_group.group_number).update(db_group)
+    db.commit()
+    db.refresh(db_group)
+    return db_group
 # 创建消息
 
 def delete(db: Session):

@@ -10,7 +10,6 @@ class DDLBase(BaseModel):
     ddltime: Union[str, None] = None
     status: str
     group_num: str
-    # owner_id:int
 
 
 class ItemCreate(DDLBase):

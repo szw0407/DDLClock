@@ -288,11 +288,16 @@ async def get_groups():
         p=get_cqhttp_httpserver_port(f)
         
         port=p[0]
-        g=requests.get(f"http://localhost:{port}/get_group_list")
-        print(g.text)
-        g=json.loads(g.text)
-        for i in g.get("data"):
-            QQMsg.write_group(i)
+        try:
+            g=requests.get(f"http://localhost:{port}/get_group_list")
+            print(g.text)
+            g=json.loads(g.text)
+        except Exception:
+            return {}
+        else:
+            if g != {}:
+                for i in g.get("data"):
+                    QQMsg.write_group(i)
                 
     return g
 if __name__ == "__main__":
