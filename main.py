@@ -1,11 +1,13 @@
 import contextlib
 from fastapi import FastAPI
+import uvicorn
 import os,sys
 import requests
 import json
 import time
 from typing import Union
 from __qqddl__ import ddlrw
+from __qqddl__.schemas import Item
 import sys
 import jionlp as jio
 from MsAPIPost import *
@@ -240,47 +242,74 @@ async def read_item(data: Dict):
 
             res = jio.ner.extract_time(data["message"], time_base=time.time())
             # print(t["message_type"])
-            if res != [] :
-                info=nlp(res,data["group_id"],data["message"])
-                print(info)
-           
+            
         except Exception:
             print('false')
+        
         else:
             with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
                 port=get_cqhttp_httpserver_port(f)[0]
 
             ls=QQMsg.list_ddls(url=f"http://127.0.0.1:{port}",grpid=data["group_id"],msgsq=data["message_seq"]) # 成功
             print(ls) # 爬取上面19条消息
+        if res != [] :
+                info=nlp(res,data["group_id"],data["message"])
+                
+                info.save_in_DB()
+                
     return {"Sta": "OK"} # Return anything you want in fact.
-    
+
+@app.put("/ddls")
+async def Modify_DDL(data:Item):    
+    ddlrw.update_ddl(id=data.id,blog=data)
+    data=ddlrw.read_item()
+
+@app.delete("/ddls")
+async def Del_DDL(id:int):
+    return ddlrw.delete_ddl(id)
+
 @app.get("/ddls/")
 async def get_DDLs():
     # settings=read_settings("settings.json")
     ret={}
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
         p=get_cqhttp_httpserver_port(f)
-        for _ in range(len(p)):
-            with contextlib.suppress(Exception):
-                ret={"userInformation":get_login_info(port=p[0])}
-        f.close()
+        
+        ret={"userInformation":get_login_info(port=p[0])}
+        
     x=ddlrw.read_items()
     DDLlist = list(x)
     ret.update({"DDL":DDLlist})
     return ret
-
+@app.get("/groups/")
+async def get_groups():
+    g={}
+    with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
+        p=get_cqhttp_httpserver_port(f)
+        
+        port=p[0]
+        g=requests.get(f"http://localhost:{port}/get_group_list")
+        print(g.text)
+        g=json.loads(g.text)
+        for i in g.get("data"):
+            QQMsg.write_group(i)
+                
+    return g
 if __name__ == "__main__":
     debug = bool(sys.gettrace())
     init(debug)
     # uvicorn.run("main:app", reload=True)
-    subprocess.Popen("uvicorn main:app ", shell=True)
-    # 主进程等待一个输入
-    input("Press any key to exit...")
-    if os.name=='nt':
-    # 输入任何字符后，终止两个子进程
-        os.system("taskkill -f -im go-cqhttp.exe && taskkill -f -im uvicorn.exe")
+    if debug:
+        uvicorn.run("main:app",reload = True)
     else:
-        os.system("pkill go-cqhttp")
-        os.system("pkill uvicorn")
-        os.system("rm -f ./go-cqhttp/go-cqhttp")
-    print("Both processes are terminated.")
+        subprocess.Popen("uvicorn main:app ", shell=True)
+    # 主进程等待一个输入
+        input("Press any key to exit...")
+        if os.name=='nt':
+        # 输入任何字符后，终止两个子进程
+            os.system("taskkill -f -im go-cqhttp.exe && taskkill -f -im uvicorn.exe")
+        else:
+            os.system("pkill go-cqhttp")
+            os.system("pkill uvicorn")
+            os.system("rm -f ./go-cqhttp/go-cqhttp")
+        print("Both processes are terminated.")

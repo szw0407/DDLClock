@@ -13,22 +13,21 @@ def get_db():
     finally:
         db.close()
 
-
 # 创建依赖项
 
 # @app.post("/groups/", response_model=schemas.Group)
 def create_group(group: schemas.GroupCreate, db: Session = next(get_db())):
-    if crud.get_group_by_groupnumber(db, get_groupnumber=group.groupnumber):
-        return None
+    if crud.get_group_by_groupnumber(db, get_groupnumber=group.group_number):
+        return crud.modify_group(db=db,group=group)
     else:
         return crud.create_group(db=db, group=group)
 
 
 # @app.post("/groups/{group_id}/items/", response_model=schemas.Item)
 def create_item_for_group(
-        group_id: int, item: schemas.ItemCreate, db: Session = next(get_db())
+        item: schemas.ItemCreate, db: Session = next(get_db())
 ):
-    return crud.create_group_item(db=db, item=item, group_id=group_id)
+    return crud.create_group_item(db=db, item=item)
 
 # @app.get("/groups/", response_model=List[schemas.Group])
 def read_groups(skip: int = 0, limit: int = 100, db: Session = next(get_db())):
@@ -43,7 +42,8 @@ def read_group_by_groupnumber(groupnumber: str, db: Session = next(get_db())):
 # @app.get("/items/", response_model=List[schemas.Item])
 def read_items(skip: int = 0, limit: int = 1000000, db: Session = next(get_db())):
     return crud.get_items(db, skip=skip, limit=limit)
-
+def read_item(id:int):
+    return crud.get_items
 # @app.delete('/item/{item_id}', response_model=List[schemas.Item])
 def delete_group(id: int, db: Session = next(get_db())):
     db.query(models.Group).filter(models.Group.id == id).delete(synchronize_session=False)

@@ -1,19 +1,26 @@
 from typing import List
-
+from __qqddl__.schemas import ItemCreate
 from __qqddl__ import ddlrw
+# from datetime import
 class Time_msg:
-    __group__=0
-    __text__=""
-    __time__="2006-01-02T15:04:05"
+    __group__:str =""
+    __text__:str=""
+    __time__ = ""
     __type__=""
     __content__=""
     def __init__(self,group,text,type,time,content):
-        self.__group__ = group
+        self.__group__ = str(group)
         self.__text__ = text
         self.__type__ = type
-        self.__time__ = time
+        self.__time__ = time[1]
         self.__content__ = content
-
+    def save_in_DB(self):
+        return ddlrw.create_item_for_group(item=ItemCreate(text=self.__content__,
+                                                           ddltime=self.__time__,
+                                                           status="",
+                                                           group_num=self.__group__,
+                                                           description=self.__text__)
+                                                           )
     # def get_group(self):
     #     return self.__group
     # def get_type(self):
@@ -47,22 +54,17 @@ class Time_msg:
 
 
 
-def nlp(data:List,group,content):
+def nlp(data:List,group,content:str):
     for dt in data:
         try:
             gr = group
-            tx = dt["text"]
+            tx = f"{content[:19]}..."
             tp = dt["type"]
             t = dt["detail"]["time"]
             return Time_msg(gr,tx,tp,t,content)
         except Exception:
             print("error")
             return "error"
-
-
-
-
-
 
 
 

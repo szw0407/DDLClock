@@ -7,9 +7,10 @@ from pydantic import BaseModel
 class DDLBase(BaseModel):
     description: str
     text:str
-    ddltime: Union[date, None] = None
+    ddltime: Union[str, None] = None
     status: str
-    owner_id:int
+    group_num: str
+    # owner_id:int
 
 
 class ItemCreate(DDLBase):
@@ -37,7 +38,6 @@ class GroupCreate(GroupBase):
 
 class Group(GroupBase):
     id: int
-    items: List[Item] = []
 
     class Config:
         orm_mode = True

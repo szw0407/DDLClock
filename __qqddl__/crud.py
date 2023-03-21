@@ -10,7 +10,7 @@ def get_group(db: Session, group_id: int):
 # 通过id查询群聊
 
 def get_group_by_groupnumber(db: Session, get_groupnumber: str):
-    return db.query(models.Group).filter(models.Group.groupnumber == get_groupnumber).all()
+    return db.query(models.Group).filter(models.Group.group_number == get_groupnumber).all()
 
 
 # 通过号码查找群聊
@@ -22,7 +22,7 @@ def get_groups(db: Session, skip: int = 0, limit: int = 100):
 # 查询所有群聊
 
 def create_group(db: Session, group: schemas.GroupCreate):
-    db_group = models.Group(groupnumber=group.groupnumber)
+    db_group = models.Group(group_number=group.group_number,group_name=group.group_name,group_ren=group.group_ren,is_active=group.is_active)
     db.add(db_group)
     db.commit()
     db.refresh(db_group)
@@ -32,19 +32,22 @@ def create_group(db: Session, group: schemas.GroupCreate):
 # 创建群
 
 def get_items(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Item).offset(skip).limit(limit).all()
+    return db.query(models.DDLs).offset(skip).limit(limit).all()
 
 
 # 获取所有消息
 
-def create_group_item(db: Session, item: schemas.ItemCreate, group_id: int):
-    db_item = models.Item(**item.dict(), owner_id=group_id)
+def create_group_item(db: Session, item: schemas.ItemCreate):
+    db_item = models.DDLs(**item.dict())
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
     return db_item
 
-
+def modify_group(db:Session, group:schemas.GroupCreate):
+    # db_group = models.Group(group_number=group.group_number,group_name=group.group_name,group_ren=group.group_ren,is_active=group.is_active)
+    # return db.query(models.Group).filter(models.Group.group_number == db_group.group_number).update(db_group)
+    return None
 # 创建消息
 
 def delete(db: Session):

@@ -13,7 +13,7 @@ class Group(Base):
     group_ren = Column(String(20))
     is_active = Column(Boolean, default=True)
     
-    items = relationship("DDLs", back_populates="owner")
+    # items = relationship("DDLs", back_populates="owner")
 
 
 class DDLs(Base):
@@ -22,8 +22,9 @@ class DDLs(Base):
     id = Column(Integer, primary_key=True, index=True,autoincrement=True)
     description = Column(String, index=True)
     text = Column(String, index=True)  # 群聊消息
-    ddltime = Column(Date)  # ddl时间
+    ddltime = Column(String)  # ddl时间
     status = Column(String)  # 紧急情况
-    owner_id = Column(Integer, ForeignKey("groups.id"))   # 
+    group_num = Column(String(15))
+    # owner_id = Column(Integer, ForeignKey("groups.id"))   # 
 
-    owner = relationship("Group", back_populates="ddls")
+    # owner = relationship("Group", back_populates="ddls")
