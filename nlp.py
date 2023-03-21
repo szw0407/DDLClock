@@ -16,8 +16,6 @@ class Time_msg:
 
     # def get_group(self):
     #     return self.__group
-    def record(self):
-        ddlrw.create_item_for_user()
     # def get_type(self):
     #     return self.__type
     
@@ -56,10 +54,8 @@ def nlp(data:List,group,content):
             tx = dt["text"]
             tp = dt["type"]
             t = dt["detail"]["time"]
-            t_msg = Time_msg(gr,tx,tp,t,content)
-
-            return t_msg
-        except:
+            return Time_msg(gr,tx,tp,t,content)
+        except Exception:
             print("error")
             return "error"
 
