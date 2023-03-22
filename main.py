@@ -7,7 +7,7 @@ import json
 import time
 from typing import Union
 from __qqddl__ import ddlrw
-from __qqddl__.schemas import Item
+from __qqddl__.schemas import Item, ItemCreate
 import sys
 import jionlp as jio
 from MsAPIPost import *
@@ -260,9 +260,16 @@ async def read_item(data: Dict):
     return {"Sta": "OK"} # Return anything you want in fact.
 
 @app.put("/ddls")
-async def Modify_DDL(data:Item):    
+async def Modify_DDL(data:Item):
     ddlrw.update_ddl(id=data.id,blog=data)
-    data=ddlrw.read_item()
+    data=ddlrw.read_item(id=data.id)
+    return data
+
+
+@app.post("/ddls")
+async def create_DDL(data:ItemCreate):
+    return ddlrw.create_item_for_group(item=data)
+
 
 @app.delete("/ddls")
 async def Del_DDL(id:int):
@@ -271,11 +278,13 @@ async def Del_DDL(id:int):
 @app.get("/ddls/")
 async def get_DDLs():
     # settings=read_settings("settings.json")
-    ret={}
+
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
         p=get_cqhttp_httpserver_port(f)
-        
-        ret={"userInformation":get_login_info(port=p[0])}
+        try:
+            ret={"userInformation":get_login_info(port=p[0])}
+        except Exception:
+            ret={}
         
     x=ddlrw.read_items()
     DDLlist = list(x)

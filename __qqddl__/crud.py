@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-
+from sqlalchemy import update
 from . import models, schemas
 
 
@@ -45,11 +45,9 @@ def create_group_item(db: Session, item: schemas.ItemCreate):
     return db_item
 
 def modify_group(db:Session, group:schemas.GroupCreate):
-    db_group = models.Group(**group.dict())
-    db.query(models.Group).filter(models.Group.group_number == db_group.group_number).update(db_group)
+    query = update(models.Group).where(models.Group.group_number == group.group_number).values(**group.dict())
+    db.execute(query)
     db.commit()
-    db.refresh(db_group)
-    return db_group
 # 创建消息
 
 def delete(db: Session):
