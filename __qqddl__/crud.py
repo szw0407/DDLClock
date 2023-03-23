@@ -48,6 +48,7 @@ def modify_group(db:Session, group:schemas.GroupCreate):
     query = update(models.Group).where(models.Group.group_number == group.group_number).values(**group.dict())
     db.execute(query)
     db.commit()
+    return query
 # 创建消息
 
 def delete(db: Session):

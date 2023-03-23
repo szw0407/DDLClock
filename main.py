@@ -1,4 +1,3 @@
-import contextlib
 from fastapi import FastAPI
 import uvicorn
 import os,sys
@@ -7,7 +6,7 @@ import json
 import time
 from typing import Union
 from __qqddl__ import ddlrw
-from __qqddl__.schemas import Item, ItemCreate
+from __qqddl__.schemas import *
 import sys
 import jionlp as jio
 from MsAPIPost import *
@@ -23,11 +22,11 @@ def read_settings(filename):
     with open(filename, "r") as set_file:
         setf=json.load(set_file)
         set_file.close()
-        return setf
+        return setf # 没啥用的文件，留作备用吧
 # 一个参数
 tenant = "common"
 
-def get_login_info(port):
+def get_login_info(port:int):
     userinfo = requests.get(f"http://127.0.0.1:{port}/get_login_info")
     return json.loads(userinfo.text)
 # 获得登录的QQ号
@@ -55,19 +54,18 @@ def get_token(filename):
         with open(fn,"r") as tok_file:
             # Loading the file into a dictionary.
             tokf=json.load(tok_file)
-            
         return tokf
 
     tokf=read_token(filename)
     # 如果超时重新拉取token
-    if tokf["load_time"]+tokf["expires_in"]<time.time():
+    if tokf["load_time"]+tokf["expires_in"]<time.time()-1:
         # The URL for getting the token.
         url=f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
         # Reading the config file and preparing the POST object for getting a new token.
         dataobj=read_config("config.json",refreshToken=tokf["refresh_token"],grantType="refresh_token")
         save_token(filename="token.temp",content=get_token_from_code(url,dataobj))
         tokf=read_token(filename)
-    return tokf["access_token"]
+    return tokf.get("access_token")
 
 
 def read_config(filename,grantType,authoriationCode=None,refreshToken=None):
@@ -109,26 +107,37 @@ def init(debug=False): # 初始化
     if not(debug):
         p=start_gocqhttp()
         if p=="win":
-            p1=subprocess.Popen("cd go-cqhttp && go-cqhttp.exe",shell=True)
-
+            subprocess.Popen("cd go-cqhttp && go-cqhttp.exe",shell=True)
         elif p=="Linux":
-
-            p1=subprocess.Popen("cd ./go-cqhttp/ && ./go-cqhttp",shell=True)
-
-        try:
-            print(get_token("token.temp"))
-        except Exception:
-            login(ReadProfile('config.json'),make_UUID(open(".UUID.temp", "w")),debug=debug)
-
-    else:
-
-        try:
-            print(get_token("token.temp"))
-        except Exception:
-            print("No token")
-        return 0
+            subprocess.Popen("cd ./go-cqhttp/ && ./go-cqhttp",shell=True)
+    try:
+        print(get_token("token.temp"))
+    except Exception:
+        print("No token")
     
-            
+@app.get("/login_info/")
+async def get_login_info():
+    try:
+        token=get_token("token.temp")
+        MsUserInfo=requests.get("https://graph.microsoft.com/v1.0/me/",headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
+        MsUserInfo=json.loads(MsUserInfo.text)
+        LoginMS=True
+    except Exception:
+        MsURL=login(ReadProfile('config.json'), make_UUID(open(".UUID.temp", "w")))
+        MsUserInfo=None
+        LoginMS=False
+    with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
+        p=get_cqhttp_httpserver_port(f,useWS=False)
+        try:
+            QQinfo=get_login_info(p[0])
+            # LoginQQ=True
+        except Exception:
+            QQinfo={}
+            # LoginQQ=False
+    ret = {"MsUserInfo":MsUserInfo} if LoginMS else {"LoginMSURL":MsURL}
+    ret["QQinfo"]=QQinfo
+    return ret
+
 
 @app.get("/{login}")
 async def read_item(state: str, error: Union[str, None] = None, error_description: Union[str, None] = None, code: Union[str, None] = None):
@@ -238,14 +247,9 @@ async def read_item(data: Dict):
     if data["post_type"] == "message" and data["message_type"]=="group": 
         
         try:
-            # s=json.dumps(data, ensure_ascii=False)
-
-            res = jio.ner.extract_time(data["message"], time_base=time.time())
-            # print(t["message_type"])
-            
+            res = jio.ner.extract_time(data["message"], time_base=time.time())          
         except Exception:
             print('false')
-        
         else:
             with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
                 port=get_cqhttp_httpserver_port(f)[0]
@@ -257,7 +261,7 @@ async def read_item(data: Dict):
                 
                 info.save_in_DB()
                 
-    return {"Sta": "OK"} # Return anything you want in fact.
+    return None # Return anything you want in fact.
 
 @app.put("/ddls")
 async def Modify_DDL(data:Item):
@@ -270,6 +274,9 @@ async def Modify_DDL(data:Item):
 async def create_DDL(data:ItemCreate):
     return ddlrw.create_item_for_group(item=data)
 
+@app.put("/group")
+async def Modify_group(data:Group):
+    return ddlrw.create_group(group=data)
 
 @app.delete("/ddls")
 async def Del_DDL(id:int):
@@ -285,17 +292,17 @@ async def get_DDLs():
             ret={"userInformation":get_login_info(port=p[0])}
         except Exception:
             ret={}
-        
+
     x=ddlrw.read_items()
     DDLlist = list(x)
-    ret.update({"DDL":DDLlist})
+    ret["DDL"] = DDLlist
     return ret
+
 @app.get("/groups/")
 async def get_groups():
     g={}
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
-        p=get_cqhttp_httpserver_port(f)
-        
+        p=get_cqhttp_httpserver_port(f)        
         port=p[0]
         try:
             g=requests.get(f"http://localhost:{port}/get_group_list")
@@ -307,12 +314,11 @@ async def get_groups():
             if g != {}:
                 for i in g.get("data"):
                     QQMsg.write_group(i)
-                
     return g
+
 if __name__ == "__main__":
     debug = bool(sys.gettrace())
     init(debug)
-    # uvicorn.run("main:app", reload=True)
     if debug:
         uvicorn.run("main:app",reload = True)
     else:

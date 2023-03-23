@@ -10,5 +10,5 @@ def list_ddls(url,msgsq,grpid):
     t=t.get("data").get("messages")
     return [i.get("message") for i in t]
 
-def write_group(groupInfo,ren="",activate=True):
-    return ddlrw.create_group(group=GroupCreate(group_name=groupInfo.get("group_name"),group_number=groupInfo.get("group_id"),group_ren=ren,is_active=activate))
+def write_group(groupInfo,ren=""):
+    return ddlrw.create_group(group=GroupCreate(group_name=groupInfo.get("group_name"),group_number=groupInfo.get("group_id"),group_ren=ren))

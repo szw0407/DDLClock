@@ -1,7 +1,7 @@
 import re
 
 import yaml
-import webbrowser
+# import webbrowser
 import uuid
 import json
 import os
@@ -16,8 +16,7 @@ def get_port_number(ip_address):# bing AI 写的，反正我看不懂
     port = match[2]
     return int(port[1:]) if port else None
 
-def get_cqhttp_httpserver_port(file,useWS=False):
-    
+def get_cqhttp_httpserver_port(file,useWS=False):    
     port =[]
     wsport=[]
     c=file.read()
@@ -106,7 +105,7 @@ def make_UUID(temp):
     temp.close()
     return UUID
 
-def login(prof,UUID,debug=False):
+def login(prof,UUID):
     """
     This function takes a profile and a UUID and opens a browser window to the login page for the
     profile
@@ -122,10 +121,6 @@ def login(prof,UUID,debug=False):
         RedirectURL = prof["redirect_URL"]
         ScopeList = prof["scope"]
         tenant="common"
-        LoginURL = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize?client_id={ClientID}&response_type=code&redirect_uri={RedirectURL}&response_mode=query&scope={ScopeList}&state={UUID}"
-        if debug:
-            print(LoginURL)
-        else:
-            webbrowser.open(LoginURL)
+        return f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize?client_id={ClientID}&response_type=code&redirect_uri={RedirectURL}&response_mode=query&scope={ScopeList}&state={UUID}"
     else:
-        print("Error:Profile error")
+        return "Error:Profile error"
