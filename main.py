@@ -116,7 +116,7 @@ def init(debug=False): # 初始化
         print("No token")
     
 @app.get("/login_info/")
-async def get_login_info():
+async def get_login_info_all():
     try:
         token=get_token("token.temp")
         MsUserInfo=requests.get("https://graph.microsoft.com/v1.0/me/",headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
@@ -135,7 +135,7 @@ async def get_login_info():
             QQinfo={}
             # LoginQQ=False
     ret = {"MsUserInfo":MsUserInfo} if LoginMS else {"LoginMSURL":MsURL}
-    ret["QQinfo"]=QQinfo
+    ret["QQinfo"]=QQinfo.get("data")
     return ret
 
 
@@ -243,8 +243,8 @@ async def create_event(data:DefaultMsEvent):
 
 @app.post("/QQ")
 async def read_item(data: Dict):
-    
-    if data["post_type"] == "message" and data["message_type"]=="group": 
+    ls = None
+    if data.get("post_type") == "message" and data.get("message_type")=="group": 
         
         try:
             res = jio.ner.extract_time(data["message"], time_base=time.time())          
@@ -261,7 +261,7 @@ async def read_item(data: Dict):
                 
                 info.save_in_DB()
                 
-    return None # Return anything you want in fact.
+    return ls # Return anything you want in fact.
 
 @app.put("/ddls")
 async def Modify_DDL(data:Item):
@@ -275,8 +275,9 @@ async def create_DDL(data:ItemCreate):
     return ddlrw.create_item_for_group(item=data)
 
 @app.put("/group")
-async def Modify_group(data:Group):
-    return ddlrw.create_group(group=data)
+async def Modify_group(data:GroupModify):    
+    ddlrw.create_group(group=data)
+    return ddlrw.read_group_by_groupnumber(data.group_number)
 
 @app.delete("/ddls")
 async def Del_DDL(id:int):
@@ -284,7 +285,7 @@ async def Del_DDL(id:int):
 
 @app.get("/ddls/")
 async def get_DDLs():
-    # settings=read_settings("settings.json")
+    settings=read_settings("settings.json")
 
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
         p=get_cqhttp_httpserver_port(f)
@@ -314,6 +315,7 @@ async def get_groups():
             if g != {}:
                 for i in g.get("data"):
                     QQMsg.write_group(i)
+    g=ddlrw.read_groups()
     return g
 
 if __name__ == "__main__":

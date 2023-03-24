@@ -1,6 +1,6 @@
 from typing import List
 from sqlalchemy.orm import Session
-
+from typing import Union
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 
@@ -16,10 +16,19 @@ def get_db():
 # 创建依赖项
 
 # @app.post("/groups/", response_model=schemas.Group)
-def create_group(group: schemas.GroupCreate, db: Session = next(get_db())):
-    if crud.get_group_by_groupnumber(db, get_groupnumber=group.group_number):
-        return crud.modify_group(db=db,group=group)
+def create_group(group: Union[schemas.GroupCreate,schemas.Group,schemas.GroupModify], db: Session = next(get_db())):
+    k=crud.get_group_by_groupnumber(db, get_groupnumber=group.group_number)
+    if k !=[]:
+        if group.group_ren is not None:
+            group.activate(k[0].is_active)
+        if group.is_active is not None:            
+            group_upd=schemas.Group(id=k[0].id,group_ren=group.group_ren if group.group_ren is not None else "",group_number=group.group_number,group_name=k[0].group_name,is_active=group.is_active)
+            crud.modify_group(db=db,group=group_upd)
+            return crud.get_group_by_groupnumber(db,get_groupnumber=group_upd.group_number)
+    elif group is not schemas.GroupCreate:
+        return {"Err":"None of the groups match the number"}
     else:
+        group.activate(False)
         return crud.create_group(db=db, group=group)
 
 

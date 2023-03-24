@@ -23,12 +23,18 @@ class Item(DDLBase):
     class Config:
         orm_mode = True
 
+class LeastGroupModify(BaseModel):
+    group_number:str
 
-class GroupBase(BaseModel):
-    group_number: str
-    group_name:str
-    group_ren:str
-    is_active:bool = False
+class GroupModify(LeastGroupModify):
+    group_ren:Union[str,None] = None
+    is_active:Union[bool,None] = None
+    def activate(self,s:bool):
+        self.is_active=s
+
+class GroupBase(GroupModify):
+    group_name:str    
+    
 
 
 class GroupCreate(GroupBase):
