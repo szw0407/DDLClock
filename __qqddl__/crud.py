@@ -56,3 +56,5 @@ def delete(db: Session):
     db.delete(db_groups)
     db.commit()
     return {"msg": "所有群聊已经删除"}
+
+# def log_Msg(db:Session,msg=schemas.)

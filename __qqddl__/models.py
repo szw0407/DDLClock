@@ -12,7 +12,15 @@ class Group(Base):
     group_name = Column(String(40))
     group_ren = Column(String(20))
     is_active = Column(Boolean, default=True)
-    
+
+# class Msg(Base):
+#     __tablename__="messages"
+
+#     id = Column(Integer,primary_key=True,index=True,autoincrement=True)
+#     relevant_DDL=Column(Integer)
+#     from_group=Column(String,index=True)
+#     internal_id=Column(Integer)
+
 
 class DDLs(Base):
     __tablename__ = "DDLs"

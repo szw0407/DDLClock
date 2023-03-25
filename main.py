@@ -263,23 +263,24 @@ async def read_item(data: Dict):
                 
     return ls # Return anything you want in fact.
 
-@app.put("/ddls")
+@app.put("/ddl")
 async def Modify_DDL(data:Item):
     ddlrw.update_ddl(id=data.id,blog=data)
     data=ddlrw.read_item(id=data.id)
     return data
 
 
-@app.post("/ddls")
+@app.post("/ddl")
 async def create_DDL(data:ItemCreate):
     return ddlrw.create_item_for_group(item=data)
 
 @app.put("/group")
 async def Modify_group(data:GroupModify):    
     ddlrw.create_group(group=data)
-    return ddlrw.read_group_by_groupnumber(data.group_number)
+    ret=ddlrw.read_group_by_groupnumber(data.group_number)
+    return {"Error":"Group Not Found."} if ret == [] else ret[0]
 
-@app.delete("/ddls")
+@app.delete("/ddl")
 async def Del_DDL(id:int):
     return ddlrw.delete_ddl(id)
 
@@ -290,7 +291,7 @@ async def get_DDLs():
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
         p=get_cqhttp_httpserver_port(f)
         try:
-            ret={"userInformation":get_login_info(port=p[0])}
+            ret={"userInformation":get_login_info(port=p[0]).get("data")}
         except Exception:
             ret={}
 

@@ -12,7 +12,7 @@ class Time_msg:
         self.__group__ = str(group)
         self.__text__ = text
         self.__type__ = type
-        self.__time__ = time[1]
+        self.__time__ = time[1] if time[1] != "inf" else time[0]
         self.__content__ = content
     def save_in_DB(self):
         return ddlrw.create_item_for_group(item=ItemCreate(text=self.__content__,
@@ -60,7 +60,8 @@ def nlp(data:List,group,content:str):
             gr = group
             tx = f"{content[:19]}..."
             tp = dt["type"]
-            t = dt["detail"]["time"]
+            
+            t = [i.replace(" ","T",1) for i in dt["detail"]["time"]]
             return Time_msg(gr,tx,tp,t,content)
         except Exception:
             print("error")

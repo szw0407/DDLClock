@@ -19,12 +19,12 @@ def get_db():
 def create_group(group: Union[schemas.GroupCreate,schemas.Group,schemas.GroupModify], db: Session = next(get_db())):
     k=crud.get_group_by_groupnumber(db, get_groupnumber=group.group_number)
     if k !=[]:
-        if group.group_ren is not None:
+        if group.group_ren is not None and group.is_active is None:
             group.activate(k[0].is_active)
         if group.is_active is not None:            
             group_upd=schemas.Group(id=k[0].id,group_ren=group.group_ren if group.group_ren is not None else "",group_number=group.group_number,group_name=k[0].group_name,is_active=group.is_active)
             crud.modify_group(db=db,group=group_upd)
-            return crud.get_group_by_groupnumber(db,get_groupnumber=group_upd.group_number)
+            return crud.modify_group(db=db,group=group_upd)
     elif group is not schemas.GroupCreate:
         return {"Err":"None of the groups match the number"}
     else:
