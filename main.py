@@ -296,8 +296,14 @@ async def get_DDLs():
             ret={}
 
     x=ddlrw.read_items()
-    DDLlist = list(x)
+    DDLlist=[]
+    for i in x:
+        x1=dict(i.__dict__)
+        x1.pop("group_num")
+        x1["from_group_info_all"] = ddlrw.read_group_by_groupnumber(i.group_num)
+        DDLlist.append(x1)
     ret["DDL"] = DDLlist
+
     return ret
 
 @app.get("/groups/")
