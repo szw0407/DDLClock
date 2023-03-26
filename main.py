@@ -36,7 +36,11 @@ def use_api(url,data,token,preferences):
     NoneK = [key for key in data.keys() if data[key] is None]
     for key in NoneK:
         del data[key]
-    POST = requests.post(url,data=json.dumps(data), headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
+    
+    if data.get("reminderMinutesBeforeStart") is None and preferences.get("reminderMinutesBeforeStart") is not None:
+        data["reminderMinutesBeforeStart"]=preferences.get("reminderMinutesBeforeStart")
+    dt=json.dumps(data)
+    POST = requests.post(url,data=dt, headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4146.4 Safari/537.36',"Authorization":f"Bearer {token}","Content-Type":"application/json"})
     ret=data
     ret.update({"token":token,"POST RET":str(POST)})
     ret.update(json.loads(POST.text))
