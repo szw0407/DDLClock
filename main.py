@@ -279,10 +279,12 @@ async def create_DDL(data:ItemCreate):
     return ddlrw.create_item_for_group(item=data)
 
 @app.put("/group")
-async def Modify_group(data:GroupModify):    
-    ddlrw.create_group(group=data)
-    ret=ddlrw.read_group_by_groupnumber(data.group_number)
-    return {"Error":"Group Not Found."} if ret == [] else ret[0]
+async def Modify_group(data:list[GroupModify]):
+    ret=[]
+    for i in data:    
+        ddlrw.create_group(group=i)    
+        ret.append(ddlrw.read_group_by_groupnumber(i.group_number)[0])
+    return ret
 
 @app.delete("/ddl")
 async def Del_DDL(id:int):
