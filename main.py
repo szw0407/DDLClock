@@ -15,8 +15,13 @@ from nlp import nlp
 import QQMsg
 import subprocess
 # import values
+import webbrowser
+from fastapi.staticfiles import StaticFiles
+from fastapi.routing import Mount
+
 
 app = FastAPI()
+app.mount("/gui", StaticFiles(directory="dist"), name="index")
 
 def read_settings(filename):
     with open(filename, "r") as set_file:
@@ -338,6 +343,7 @@ if __name__ == "__main__":
         uvicorn.run("main:app",reload = True)
     else:
         subprocess.Popen("uvicorn main:app ", shell=True)
+        webbrowser.open("http://localhost:8000/gui/index.html")
     # 主进程等待一个输入
         input("Press any key to exit...")
         if os.name=='nt':
