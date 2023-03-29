@@ -274,6 +274,7 @@ async def read_item(data: Dict):
 
 @app.put("/ddl")
 async def Modify_DDL(data:Item):
+    data.getGN(gn=ddlrw.read_item(id=data.id)[0].__dict__.get("group_num"))
     ddlrw.update_ddl(id=data.id,blog=data)
     data=ddlrw.read_item(id=data.id)
     return data
@@ -343,6 +344,7 @@ if __name__ == "__main__":
         uvicorn.run("main:app",reload = True)
     else:
         subprocess.Popen("uvicorn main:app ", shell=True)
+        time.sleep(15)
         webbrowser.open("http://localhost:8000/gui/index.html")
     # 主进程等待一个输入
         input("Press any key to exit...")

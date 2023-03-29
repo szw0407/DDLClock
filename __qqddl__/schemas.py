@@ -9,7 +9,7 @@ class DDLBase(BaseModel):
     text:str
     ddltime: Union[str, None] = None
     status: str
-    group_num: str
+    group_num: str = "0"
 
 
 class ItemCreate(DDLBase):
@@ -19,6 +19,8 @@ class ItemCreate(DDLBase):
 class Item(DDLBase):
     id: int
     # owner_id: int
+    def getGN(self,gn):
+        self.group_num=gn
 
     class Config:
         orm_mode = True
