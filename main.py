@@ -274,7 +274,8 @@ async def read_item(data: Dict):
 
 @app.put("/ddl")
 async def Modify_DDL(data:Item):
-    data.getGN(gn=ddlrw.read_item(id=data.id)[0].__dict__.get("group_num"))
+    obj=ddlrw.read_item(id=data.id)
+    data.getGN(gn=obj[0].__dict__.get("group_num"))
     ddlrw.update_ddl(id=data.id,blog=data)
     data=ddlrw.read_item(id=data.id)
     return data

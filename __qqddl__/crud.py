@@ -30,7 +30,8 @@ def create_group(db: Session, group: schemas.GroupCreate):
 
 
 # 创建群
-
+def get_item(db:Session, id:int):
+    return db.query(models.DDLs).filter(models.DDLs.id==id).all()
 def get_items(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.DDLs).offset(skip).limit(limit).all()
 

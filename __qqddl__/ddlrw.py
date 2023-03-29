@@ -52,7 +52,7 @@ def read_group_by_groupnumber(groupnumber: str, db: Session = next(get_db())):
 def read_items(skip: int = 0, limit: int = 1000000, db: Session = next(get_db())):
     return crud.get_items(db, skip=skip, limit=limit)
 def read_item(id:int,db:Session=next(get_db())):
-    return crud.get_items(db=db,skip=id-1,limit=id+1)
+    return crud.get_item(db=db,id=id)
 # @app.delete('/item/{item_id}', response_model=List[schemas.Item])
 def delete_group(id: int, db: Session = next(get_db())):
     db.query(models.Group).filter(models.Group.id == id).delete(synchronize_session=False)
