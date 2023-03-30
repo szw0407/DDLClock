@@ -61,6 +61,8 @@ class DefaultMsEvent(BaseModel):
     allowNewTimeProposals:Union[bool,None] = None
     isAllDay:bool = False
     transactionId:Union[None,str] = None # Maybe a UUID again, but not sure.
+    def trans(self,a):
+        self.transactionId = a
 
 class DefaultMsToDo(BaseModel):
     class bodyDict(BaseModel):

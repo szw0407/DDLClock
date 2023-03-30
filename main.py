@@ -210,7 +210,7 @@ async def read_item(state: str, error: Union[str, None] = None, error_descriptio
             tmp.update({"error":"token UNABLE to save. Please copy the information here."})
     return tmp
 
-@app.post("/MsCalendar")
+@app.post("/MSCalendar")
 async def create_event(data:DefaultMsEvent):
     # 一个用来测试的端口，对接微软API
     """
@@ -234,8 +234,9 @@ async def create_event(data:DefaultMsEvent):
         - seriesMasterId
         - show
     """
+    
+    data.trans(str(uuid.uuid4()))
     data=data.dict()
-
     try:
         token=get_token("token.temp")
     except Exception:
