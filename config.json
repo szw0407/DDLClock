@@ -1,0 +1,5 @@
+{
+    "client_ID":"186319c5-7f9b-4446-b404-d7c982cfe975",
+    "redirect_URL":"http://localhost:8000/login",
+    "scope":"offline_access%20Calendars.ReadWrite%20Tasks.ReadWrite%20User.Read%20User.Read.All"
+}
