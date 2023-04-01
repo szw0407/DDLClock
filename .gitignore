@@ -2,7 +2,7 @@
 # 可能有些东西还是要提交的，到时候再改
 /.idea
 /venv
-config.json
+# config.json
 # settings.json
 /__pycache__
 *log.*
