@@ -345,16 +345,18 @@ if __name__ == "__main__":
     if debug:
         uvicorn.run("main:app",reload = True)
     else:
-        subprocess.Popen("uvicorn main:app ", shell=True)
+        # subprocess.Popen("uvicorn main:app ", shell=True)
+        
         time.sleep(15)
         webbrowser.open("http://localhost:8000/gui/index.html")
+        uvicorn.run("main:app",reload = True)
     # 主进程等待一个输入
-        input("Press any key to exit...")
-        if os.name=='nt':
-        # 输入任何字符后，终止两个子进程
-            os.system("taskkill -f -im go-cqhttp.exe && taskkill -f -im uvicorn.exe")
-        else:
-            os.system("pkill go-cqhttp")
-            os.system("pkill uvicorn")
-            os.system("rm -f ./go-cqhttp/go-cqhttp")
-        print("Both processes are terminated.")
+        # input("Press any key to exit...")
+        # if os.name=='nt':
+        # # 输入任何字符后，终止两个子进程
+        #     os.system("taskkill -f -im go-cqhttp.exe && taskkill -f -im uvicorn.exe")
+        # else:
+        #     os.system("pkill go-cqhttp")
+        #     os.system("pkill uvicorn")
+        #     os.system("rm -f ./go-cqhttp/go-cqhttp")
+        # print("Both processes are terminated.")
