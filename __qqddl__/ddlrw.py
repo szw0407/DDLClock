@@ -25,7 +25,7 @@ def create_group(group: Union[schemas.GroupCreate,schemas.Group,schemas.GroupMod
             group_upd=schemas.Group(id=k[0].id,group_ren=group.group_ren if group.group_ren is not None else "",group_number=group.group_number,group_name=k[0].group_name,is_active=group.is_active)
             crud.modify_group(db=db,group=group_upd)
             return crud.modify_group(db=db,group=group_upd)
-    elif group is not schemas.GroupCreate:
+    elif type(group) != schemas.GroupCreate:
         return {"Err":"None of the groups match the number"}
     else:
         group.activate(False)
