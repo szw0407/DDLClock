@@ -323,6 +323,7 @@ async def get_DDLs():
 @app.get("/groups/")
 async def get_groups():
     g={}
+    p=None
     with open("./go-cqhttp/config.yml","r",encoding="utf-8") as f:
         p=get_cqhttp_httpserver_port(f)        
         port=p[0]
@@ -335,21 +336,21 @@ async def get_groups():
         else:
             if g != {}:
                 for i in g.get("data"):
-                    QQMsg.write_group(i)
+                    p=QQMsg.write_group(i)
+    if type(p)==dict:
+        return p
     g=ddlrw.read_groups()
     return g
 
 if __name__ == "__main__":
     debug = bool(sys.gettrace())
     init(debug)
-    if debug:
-        uvicorn.run("main:app",reload = True)
-    else:
+    if not debug:
         # subprocess.Popen("uvicorn main:app ", shell=True)
-        
+
         time.sleep(15)
         webbrowser.open("http://localhost:8000/gui/index.html")
-        uvicorn.run("main:app",reload = True)
+    uvicorn.run("main:app",reload = True)
     # 主进程等待一个输入
         # input("Press any key to exit...")
         # if os.name=='nt':
